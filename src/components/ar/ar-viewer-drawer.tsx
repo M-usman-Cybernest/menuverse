@@ -38,7 +38,7 @@ export function ArViewerDrawer({
         >
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="mx-auto flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-[#fcfaf7] shadow-[0_32px_80px_-28px_rgba(17,24,39,0.5)]"
+            className="mx-auto flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-[#fcfaf7] shadow-[0_32px_80px_-28px_rgba(17,24,39,0.5)]"
             exit={{ opacity: 0, y: 20 }}
             initial={{ opacity: 0, y: 24 }}
             onClick={(event) => event.stopPropagation()}
@@ -60,8 +60,8 @@ export function ArViewerDrawer({
               </Button>
             </div>
             <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[1.5fr_0.9fr]">
-              <div className="min-h-[360px] overflow-hidden rounded-lg border border-[#e5dccf] bg-white">
-                <ModelViewerElement item={item} />
+              <div className="min-h-[340px] overflow-hidden rounded-lg border border-[#e5dccf] bg-white">
+                <ModelViewerElement item={item} key={item.id} />
               </div>
               <div className="flex flex-col gap-4">
                 <Card>
@@ -71,7 +71,7 @@ export function ArViewerDrawer({
                       <p className="text-sm font-semibold">Tableside Preview</p>
                     </div>
                     <p className="text-sm leading-6 text-[#4b5563]">
-                      {item.description}
+                      {item.description || "Explore this dish in 3D before you order."}
                     </p>
                     {item.arModelIosUrl ? (
                       <Button asChild size="sm" variant="outline">

@@ -12,14 +12,15 @@ import {
   Upload,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import {
   API_DASHBOARD_UPLOAD,
-  API_GOOGLE_AUTH,
   API_GOOGLE_CALLBACK,
   API_GOOGLE_FILES,
+  API_GOOGLE_STATUS,
 } from "@/lib/api-routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,8 @@ import type { ExternalStorageProvider, ItemAssetTarget } from "@/lib/storage";
 import { hasArAsset } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 
+const GOOGLE_CONNECT_PAGE = "/dashboard/google-connect";
+
 type CategoryForm = { name: string; description: string };
 type ItemForm = {
   name: string;
@@ -49,7 +52,7 @@ type ItemForm = {
 };
 
 type UploadMode = "local" | "google-drive";
-type UploadKind = "image" | "model" | "ios-model";
+type UploadKind = "image" | "model";
 type GoogleDriveAsset = {
   createdTime?: string;
   id: string;
@@ -59,6 +62,11 @@ type GoogleDriveAsset = {
   target: ItemAssetTarget;
   thumbnailUrl: string | null;
   url: string;
+};
+type GoogleDriveStatusResponse = {
+  configured: boolean;
+  connected: boolean;
+  message?: string;
 };
 
 const EMPTY_CATEGORY: CategoryForm = { name: "", description: "" };
@@ -82,6 +90,7 @@ const STORAGE_PROVIDER_OPTIONS: Array<{
 ];
 
 export function DashboardMenuPage() {
+  const router = useRouter();
   const {
     availableTags,
     categories,
@@ -117,17 +126,20 @@ export function DashboardMenuPage() {
   const [driveError, setDriveError] = useState("");
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveNeedsAuth, setDriveNeedsAuth] = useState(false);
-  const [connectingDrive, setConnectingDrive] = useState(false);
+  const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
+  const [checkingGoogleDriveStatus, setCheckingGoogleDriveStatus] =
+    useState(true);
+  const [redirectingToGoogleConnect, setRedirectingToGoogleConnect] =
+    useState(false);
 
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
-  const iosModelInputRef = useRef<HTMLInputElement>(null);
   const imageUploadModeRef = useRef<UploadMode>("local");
   const modelUploadModeRef = useRef<UploadMode>("local");
-  const iosUploadModeRef = useRef<UploadMode>("local");
+  const redirectTimeoutRef = useRef<number | null>(null);
 
   const [filterCategoryId, setFilterCategoryId] = useState<string>("all");
   const [tagEditorItemId, setTagEditorItemId] = useState<string | null>(null);
@@ -141,6 +153,46 @@ export function DashboardMenuPage() {
     },
     [],
   );
+
+  const loadGoogleDriveStatus = useCallback(async () => {
+    setCheckingGoogleDriveStatus(true);
+
+    try {
+      const response = await fetch(API_GOOGLE_STATUS);
+      const payload = (await response.json()) as
+        | GoogleDriveStatusResponse
+        | { message?: string };
+
+      if (!response.ok || !("connected" in payload)) {
+        throw new Error(
+          "message" in payload && payload.message
+            ? payload.message
+            : "Could not check the Google account connection.",
+        );
+      }
+
+      setGoogleDriveConnected(payload.connected);
+      setDriveNeedsAuth(!payload.connected);
+      setRedirectingToGoogleConnect(false);
+
+      if (payload.connected) {
+        setDriveError("");
+        setStorageError("");
+      } else if (payload.message) {
+        setDriveError(payload.message);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not check the Google account connection.";
+      setGoogleDriveConnected(false);
+      setDriveNeedsAuth(true);
+      setDriveError(message);
+    } finally {
+      setCheckingGoogleDriveStatus(false);
+    }
+  }, []);
 
   const loadGoogleDriveAssets = useCallback(
     async (target: ItemAssetTarget) => {
@@ -170,6 +222,7 @@ export function DashboardMenuPage() {
 
         setDriveAssets(payload.assets);
         setDriveNeedsAuth(false);
+        setGoogleDriveConnected(true);
       } catch (error) {
         const message =
           error instanceof Error
@@ -186,128 +239,84 @@ export function DashboardMenuPage() {
   );
 
   useEffect(() => {
-    function handleWindowMessage(event: MessageEvent) {
-      if (!event.data || typeof event.data !== "object") {
-        return;
-      }
-
-      if (event.data.type === "menuverse-external-asset") {
-        const asset = event.data.asset as
-          | { target?: ItemAssetTarget; url?: string }
-          | undefined;
-
-        if (!asset?.target || !asset?.url) {
-          return;
-        }
-
-        applyAssetToItem({
-          target: asset.target,
-          url: asset.url,
-        });
-        setStorageModalOpen(false);
-        setStorageUrl("");
-        setStorageError("");
-        return;
-      }
-
-      if (event.data.type === "menuverse-google-drive-auth") {
-        setConnectingDrive(false);
-
-        if (event.data.ok) {
-          setDriveNeedsAuth(false);
-          setDriveError("");
-          setStorageError("");
-
-          if (driveBrowserOpen) {
-            void loadGoogleDriveAssets(storageTarget);
-          }
-          return;
-        }
-
-        const message =
-          typeof event.data.message === "string"
-            ? event.data.message
-            : "Google Drive could not be connected.";
-        setDriveNeedsAuth(true);
-        setDriveError(message);
-        setStorageError(message);
-      }
-    }
-
-    window.addEventListener("message", handleWindowMessage);
+    const timeoutId = window.setTimeout(() => {
+      void loadGoogleDriveStatus();
+    }, 0);
 
     return () => {
-      window.removeEventListener("message", handleWindowMessage);
+      window.clearTimeout(timeoutId);
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
     };
-  }, [applyAssetToItem, driveBrowserOpen, loadGoogleDriveAssets, storageTarget]);
+  }, [loadGoogleDriveStatus]);
 
   const filteredItems =
     filterCategoryId === "all"
       ? items
       : items.filter((item) => item.categoryId === filterCategoryId);
 
-  const connectGoogleDrive = useCallback(async () => {
-    setConnectingDrive(true);
-    setDriveError("");
-    setStorageError("");
-
-    try {
-      const origin = window.location.origin;
-      const response = await fetch(
-        `${API_GOOGLE_AUTH}?origin=${encodeURIComponent(origin)}`,
-      );
-      const payload = (await response.json()) as
-        | { authUrl: string }
-        | { message?: string };
-
-      if (!response.ok || !("authUrl" in payload)) {
-        throw new Error(
-          "message" in payload && payload.message
-            ? payload.message
-            : "Could not start Google Drive authorization.",
-        );
-      }
-
-      const popup = window.open(
-        payload.authUrl,
-        "menuverse-google-drive",
-        "width=560,height=720,resizable=yes,scrollbars=yes",
-      );
-
-      if (!popup) {
-        throw new Error(
-          "Popup blocked. Allow popups for this site, then try connecting Google Drive again.",
-        );
-      }
-
-      popup.focus();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Could not start Google Drive authorization.";
+  const redirectToGoogleConnect = useCallback(
+    (message: string) => {
       setDriveNeedsAuth(true);
+      setGoogleDriveConnected(false);
+      setRedirectingToGoogleConnect(true);
       setDriveError(message);
       setStorageError(message);
-      setConnectingDrive(false);
-    }
-  }, []);
+
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+
+      redirectTimeoutRef.current = window.setTimeout(() => {
+        router.push(GOOGLE_CONNECT_PAGE);
+      }, 2000);
+    },
+    [router],
+  );
+
+  const ensureGoogleDriveConnected = useCallback(
+    (message: string) => {
+      if (googleDriveConnected) {
+        return true;
+      }
+
+      if (checkingGoogleDriveStatus) {
+        setDriveError("Checking your Google account status. Please wait a moment.");
+        return false;
+      }
+
+      redirectToGoogleConnect(`${message} Redirecting to Google Connect...`);
+      return false;
+    },
+    [checkingGoogleDriveStatus, googleDriveConnected, redirectToGoogleConnect],
+  );
 
   const uploadFile = useCallback(
     async (file: File, type: UploadKind, uploadMode: UploadMode) => {
+      if (
+        uploadMode === "google-drive" &&
+        !ensureGoogleDriveConnected(
+          "Connect your Google account before uploading files to Google Drive.",
+        )
+      ) {
+        return;
+      }
+
       const setter = type === "image" ? setUploading : setUploadingModel;
       setter(true);
       setStorageError("");
       setDriveError("");
 
       try {
+        const target = getTargetForUpload(type, file);
         const formData = new FormData();
         formData.append("file", file);
         formData.append(
           "provider",
           uploadMode === "google-drive" ? "google-drive" : "local",
         );
-        formData.append("target", getTargetForUpload(type));
+        formData.append("target", target);
 
         const response = await fetch(API_DASHBOARD_UPLOAD, {
           body: formData,
@@ -320,18 +329,21 @@ export function DashboardMenuPage() {
 
         if (!response.ok || !result?.url) {
           if (result?.needsAuth) {
-            setDriveNeedsAuth(true);
+            redirectToGoogleConnect(
+              "Connect your Google account before uploading files to Google Drive.",
+            );
           }
 
           throw new Error(result?.message || "Upload failed.");
         }
 
         applyAssetToItem({
-          target: getTargetForUpload(type),
+          target,
           url: result.url,
         });
 
         if (uploadMode === "google-drive") {
+          setGoogleDriveConnected(true);
           setDriveNeedsAuth(false);
         }
       } catch (error) {
@@ -342,7 +354,7 @@ export function DashboardMenuPage() {
         setter(false);
       }
     },
-    [applyAssetToItem],
+    [applyAssetToItem, ensureGoogleDriveConnected, redirectToGoogleConnect],
   );
 
   function openAddCategory() {
@@ -418,6 +430,15 @@ export function DashboardMenuPage() {
       return;
     }
 
+    if (
+      !editItemId &&
+      !ensureGoogleDriveConnected(
+        "Connect your Google account before adding a new item.",
+      )
+    ) {
+      return;
+    }
+
     const success = await saveItem(editItemId, {
       arModelIosUrl: itemForm.arModelIosUrl || undefined,
       arModelUrl: itemForm.arModelUrl || undefined,
@@ -443,6 +464,14 @@ export function DashboardMenuPage() {
   }
 
   async function openDriveBrowser(target: ItemAssetTarget) {
+    if (
+      !ensureGoogleDriveConnected(
+        "Connect your Google account before browsing Drive files.",
+      )
+    ) {
+      return;
+    }
+
     setStorageTarget(target);
     setDriveBrowserOpen(true);
     await loadGoogleDriveAssets(target);
@@ -451,6 +480,15 @@ export function DashboardMenuPage() {
   async function applyStorageUrl() {
     if (!storageUrl.trim()) {
       setStorageError("Paste a hosted file URL first.");
+      return;
+    }
+
+    if (
+      storageProvider === "google-drive" &&
+      !ensureGoogleDriveConnected(
+        "Connect your Google account before attaching Drive files.",
+      )
+    ) {
       return;
     }
 
@@ -842,23 +880,25 @@ export function DashboardMenuPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#0f766e]">
-                  Google Drive uploads
+                  Google account
                 </p>
                 <p className="text-sm text-[#4b5563]">
-                  Upload images and 3D models into your configured Drive folder or
-                  browse files already stored there.
+                  {checkingGoogleDriveStatus
+                    ? "Checking the Google Drive connection for this admin session."
+                    : googleDriveConnected
+                      ? "Connected. You can add items and upload menu assets to Google Drive."
+                      : "Connect your Google account before adding a new item. If you continue without it, you'll be redirected here in 2 seconds."}
                 </p>
               </div>
               <Button
-                disabled={connectingDrive}
-                onClick={() => void connectGoogleDrive()}
+                onClick={() => router.push(GOOGLE_CONNECT_PAGE)}
                 size="sm"
                 variant={driveNeedsAuth ? "default" : "outline"}
               >
-                {connectingDrive ? "Connecting..." : "Connect Google Drive"}
+                {googleDriveConnected ? "Manage Connection" : "Open Google Connect"}
               </Button>
             </div>
-            {driveError ? (
+            {redirectingToGoogleConnect || driveError ? (
               <p className="mt-3 text-sm text-[#b45309]">{driveError}</p>
             ) : null}
           </div>
@@ -933,8 +973,14 @@ export function DashboardMenuPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     onClick={() => {
-                      imageUploadModeRef.current = "google-drive";
-                      imageInputRef.current?.click();
+                      if (
+                        ensureGoogleDriveConnected(
+                          "Connect your Google account before uploading images to Google Drive.",
+                        )
+                      ) {
+                        imageUploadModeRef.current = "google-drive";
+                        imageInputRef.current?.click();
+                      }
                     }}
                     size="sm"
                     type="button"
@@ -1017,85 +1063,51 @@ export function DashboardMenuPage() {
             />
           </Field>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <AssetField
-              actionLabel="Upload .glb / .gltf"
-              assetUrl={itemForm.arModelUrl}
-              badgeLabel="Android Model"
-              browseLabel="Browse Drive"
-              onBrowseDrive={() => void openDriveBrowser("arModelUrl")}
-              onLocalUpload={() => {
-                modelUploadModeRef.current = "local";
-                modelInputRef.current?.click();
-              }}
-              onOpenStorageModal={() => openStorageModal("arModelUrl")}
-              onRemoteUpload={() => {
+          <ModelAssetField
+            androidUrl={itemForm.arModelUrl}
+            iosUrl={itemForm.arModelIosUrl}
+            onAndroidUrlChange={(value) =>
+              setItemForm((previous) => ({
+                ...previous,
+                arModelUrl: value,
+              }))
+            }
+            onIosUrlChange={(value) =>
+              setItemForm((previous) => ({
+                ...previous,
+                arModelIosUrl: value,
+              }))
+            }
+            onLocalUpload={() => {
+              modelUploadModeRef.current = "local";
+              modelInputRef.current?.click();
+            }}
+            onRemoteUpload={() => {
+              if (
+                ensureGoogleDriveConnected(
+                  "Connect your Google account before uploading 3D models to Google Drive.",
+                )
+              ) {
                 modelUploadModeRef.current = "google-drive";
                 modelInputRef.current?.click();
-              }}
-              onUrlChange={(value) =>
-                setItemForm((previous) => ({
-                  ...previous,
-                  arModelUrl: value,
-                }))
               }
-              placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
-              uploading={uploadingModel}
-            >
-              <input
-                accept=".glb,.gltf"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void uploadFile(file, "model", modelUploadModeRef.current);
-                  }
-                  event.target.value = "";
-                }}
-                ref={modelInputRef}
-                type="file"
-              />
-            </AssetField>
-
-            <AssetField
-              actionLabel="Upload .usdz"
-              assetUrl={itemForm.arModelIosUrl}
-              badgeLabel="iOS Model"
-              browseLabel="Browse Drive"
-              onBrowseDrive={() => void openDriveBrowser("arModelIosUrl")}
-              onLocalUpload={() => {
-                iosUploadModeRef.current = "local";
-                iosModelInputRef.current?.click();
+            }}
+            uploading={uploadingModel}
+          >
+            <input
+              accept=".glb,.gltf,.usdz"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  void uploadFile(file, "model", modelUploadModeRef.current);
+                }
+                event.target.value = "";
               }}
-              onOpenStorageModal={() => openStorageModal("arModelIosUrl")}
-              onRemoteUpload={() => {
-                iosUploadModeRef.current = "google-drive";
-                iosModelInputRef.current?.click();
-              }}
-              onUrlChange={(value) =>
-                setItemForm((previous) => ({
-                  ...previous,
-                  arModelIosUrl: value,
-                }))
-              }
-              placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
-              uploading={uploadingModel}
-            >
-              <input
-                accept=".usdz"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void uploadFile(file, "ios-model", iosUploadModeRef.current);
-                  }
-                  event.target.value = "";
-                }}
-                ref={iosModelInputRef}
-                type="file"
-              />
-            </AssetField>
-          </div>
+              ref={modelInputRef}
+              type="file"
+            />
+          </ModelAssetField>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button onClick={() => setItemModalOpen(false)} variant="outline">
@@ -1144,13 +1156,8 @@ export function DashboardMenuPage() {
                 or paste a shareable Drive link here.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  disabled={connectingDrive}
-                  onClick={() => void connectGoogleDrive()}
-                  size="sm"
-                  type="button"
-                >
-                  {connectingDrive ? "Connecting..." : "Connect Drive"}
+                <Button onClick={() => router.push(GOOGLE_CONNECT_PAGE)} size="sm" type="button">
+                  Open Google Connect
                 </Button>
                 <Button
                   onClick={() => {
@@ -1210,13 +1217,12 @@ export function DashboardMenuPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
-                disabled={connectingDrive}
-                onClick={() => void connectGoogleDrive()}
+                onClick={() => router.push(GOOGLE_CONNECT_PAGE)}
                 size="sm"
                 type="button"
                 variant={driveNeedsAuth ? "default" : "outline"}
               >
-                {connectingDrive ? "Connecting..." : "Connect Drive"}
+                Open Google Connect
               </Button>
               <Button
                 disabled={driveLoading}
@@ -1296,43 +1302,53 @@ export function DashboardMenuPage() {
   );
 }
 
-function AssetField({
-  actionLabel,
-  assetUrl,
-  badgeLabel,
-  browseLabel,
+function ModelAssetField({
+  androidUrl,
+  iosUrl,
   children,
-  onBrowseDrive,
+  onAndroidUrlChange,
+  onIosUrlChange,
   onLocalUpload,
-  onOpenStorageModal,
   onRemoteUpload,
-  onUrlChange,
-  placeholder,
   uploading,
 }: {
-  actionLabel: string;
-  assetUrl: string;
-  badgeLabel: string;
-  browseLabel: string;
+  androidUrl: string;
+  iosUrl: string;
   children: React.ReactNode;
-  onBrowseDrive: () => void;
+  onAndroidUrlChange: (value: string) => void;
+  onIosUrlChange: (value: string) => void;
   onLocalUpload: () => void;
-  onOpenStorageModal: () => void;
   onRemoteUpload: () => void;
-  onUrlChange: (value: string) => void;
-  placeholder: string;
   uploading: boolean;
 }) {
   return (
-    <Field label={badgeLabel}>
+    <Field label="3D Model">
       <div className="flex flex-col gap-2 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
         {children}
-        {assetUrl ? (
-          <Badge className="w-fit" variant="accent">
-            <Package className="mr-1 h-3 w-3" />
-            {badgeLabel}
-          </Badge>
-        ) : null}
+        <p className="text-sm leading-6 text-[#4b5563]">
+          Use one upload field for either platform. `.glb` and `.gltf` files are
+          saved for Android/Web viewers, while `.usdz` files are saved for iPhone
+          and iPad Quick Look.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {androidUrl ? (
+            <Badge className="w-fit" variant="accent">
+              <Package className="mr-1 h-3 w-3" />
+              Android/Web model ready
+            </Badge>
+          ) : null}
+          {iosUrl ? (
+            <Badge className="w-fit" variant="accent">
+              <Package className="mr-1 h-3 w-3" />
+              iOS model ready
+            </Badge>
+          ) : null}
+          {!androidUrl && !iosUrl ? (
+            <Badge className="w-fit" variant="warm">
+              No 3D model uploaded yet
+            </Badge>
+          ) : null}
+        </div>
         <button
           className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
           disabled={uploading}
@@ -1340,29 +1356,27 @@ function AssetField({
           type="button"
         >
           <Upload className="h-4 w-4" />
-          <span>{uploading ? "Uploading..." : actionLabel}</span>
+          <span>
+            {uploading ? "Uploading..." : "Upload a 3D model (.glb, .gltf, .usdz)"}
+          </span>
         </button>
         <div className="flex flex-wrap gap-2">
           <Button onClick={onRemoteUpload} size="sm" type="button" variant="secondary">
             Upload to Google Drive
           </Button>
-          <Button onClick={onBrowseDrive} size="sm" type="button" variant="outline">
-            {browseLabel}
-          </Button>
-          <Button
-            onClick={onOpenStorageModal}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            Storage Link
-          </Button>
         </div>
-        <Input
-          onChange={(event) => onUrlChange(event.target.value)}
-          placeholder={placeholder}
-          value={assetUrl}
-        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            onChange={(event) => onAndroidUrlChange(event.target.value)}
+            placeholder="Android/Web model URL (.glb or .gltf)"
+            value={androidUrl}
+          />
+          <Input
+            onChange={(event) => onIosUrlChange(event.target.value)}
+            placeholder="iOS model URL (.usdz)"
+            value={iosUrl}
+          />
+        </div>
       </div>
     </Field>
   );
@@ -1387,16 +1401,23 @@ function Field({
   );
 }
 
-function getTargetForUpload(type: UploadKind): ItemAssetTarget {
+function getTargetForUpload(type: UploadKind, file?: File): ItemAssetTarget {
   if (type === "image") {
     return "imageUrl";
   }
 
-  if (type === "ios-model") {
+  if (file && isIosModelFile(file)) {
     return "arModelIosUrl";
   }
 
   return "arModelUrl";
+}
+
+function isIosModelFile(file: Pick<File, "name" | "type">) {
+  return (
+    file.type === "model/vnd.usdz+zip" ||
+    file.name.toLowerCase().endsWith(".usdz")
+  );
 }
 
 function getTargetLabel(target: ItemAssetTarget) {

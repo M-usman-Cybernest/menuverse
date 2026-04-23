@@ -74,7 +74,7 @@ const itemSchema = z.object({
   restaurantId: z.string().min(1),
   categoryId: z.string().min(1),
   name: z.string().trim().min(1),
-  description: z.string().trim().min(1),
+  description: z.string().trim().default(""),
   price: z.number().min(0),
   imageUrl: z.string().trim().min(1),
   arModelUrl: z.string().trim().optional(),
