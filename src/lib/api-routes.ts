@@ -39,6 +39,7 @@ export const API_DASHBOARD_UPLOAD = "/api/dashboard/upload";
 export const API_DASHBOARD_USERS = "/api/dashboard/users";
 export const API_DASHBOARD_USER = (id: string) =>
   `/api/dashboard/users/${id}`;
+export const API_GOOGLE_CALLBACK = "/api/google/callback";
 
 // ─── Public ───
 export const API_RESTAURANTS_BY_SLUG = (slug: string) =>

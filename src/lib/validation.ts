@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { DIETARY_TAGS, USER_ROLES, WEEK_DAYS } from "@/lib/constants";
+import {
+  EXTERNAL_STORAGE_PROVIDERS,
+  ITEM_ASSET_TARGETS,
+} from "@/lib/storage";
 
 export const loginSchema = z.object({
   email: z.email().transform((value) => value.toLowerCase()),
@@ -85,4 +89,29 @@ export const saveRestaurantSchema = z.object({
   restaurant: restaurantSchema,
   categories: z.array(categorySchema),
   items: z.array(itemSchema),
+});
+
+const itemInputSchema = z.object({
+  categoryId: z.string().trim().min(1),
+  name: z.string().trim().min(1),
+  description: z.string().trim().default(""),
+  price: z.coerce.number().min(0),
+  imageUrl: z.string().trim().optional(),
+  arModelUrl: z.string().trim().optional(),
+  arModelIosUrl: z.string().trim().optional(),
+  dietaryTags: z.array(z.enum(DIETARY_TAGS)).optional(),
+  prepTime: z.string().trim().optional(),
+  featured: z.boolean().optional(),
+});
+
+export const createItemSchema = itemInputSchema;
+export const updateItemSchema = itemInputSchema.partial();
+
+export const externalAssetSchema = z.object({
+  fileId: z.string().trim().optional(),
+  origin: z.string().trim().optional(),
+  popup: z.coerce.boolean().optional(),
+  provider: z.enum(EXTERNAL_STORAGE_PROVIDERS).optional(),
+  target: z.enum(ITEM_ASSET_TARGETS),
+  url: z.string().trim().min(1),
 });

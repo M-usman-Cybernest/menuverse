@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongoose";
 import { MenuItemModel } from "@/lib/models/menu-item";
 import { MenuCategoryModel } from "@/lib/models/menu-category";
 import { isDatabaseConfigured } from "@/lib/env";
+import { hasArAsset } from "@/lib/storage";
 import type { AuthSession } from "@/lib/types";
 import {
   findUserById,
@@ -25,7 +26,13 @@ export async function getDashboardStats(currentSession: AuthSession) {
     const [activeItems, categories, arModels] = await Promise.all([
       MenuItemModel.countDocuments({ restaurantId: restaurant.id }),
       MenuCategoryModel.countDocuments({ restaurantId: restaurant.id }),
-      MenuItemModel.countDocuments({ restaurantId: restaurant.id, arModelUrl: { $exists: true, $ne: "" } }),
+      MenuItemModel.countDocuments({
+        restaurantId: restaurant.id,
+        $or: [
+          { arModelUrl: { $exists: true, $ne: "" } },
+          { arModelIosUrl: { $exists: true, $ne: "" } },
+        ],
+      }),
     ]);
     return {
       activeItems,
@@ -38,7 +45,7 @@ export async function getDashboardStats(currentSession: AuthSession) {
   const state = getMemoryState();
   const items = state.items.filter((i) => i.restaurantId === restaurant.id);
   const categories = state.categories.filter((c) => c.restaurantId === restaurant.id);
-  const arModels = items.filter((i) => i.arModelUrl).length;
+  const arModels = items.filter(hasArAsset).length;
 
   return {
     activeItems: items.length,

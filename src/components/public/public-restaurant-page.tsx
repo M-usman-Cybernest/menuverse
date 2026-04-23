@@ -11,6 +11,7 @@ import { ArViewerDrawer } from "@/components/ar/ar-viewer-drawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { hasArAsset } from "@/lib/storage";
 import type { RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
 
@@ -65,11 +66,11 @@ export function PublicRestaurantPage({
   );
   const activeItem =
     initialDataset?.items.find(
-      (item) => item.id === activeArItemId && item.arModelUrl,
+      (item) => item.id === activeArItemId && hasArAsset(item),
     ) ?? null;
 
   // Count of AR-ready items
-  const arReadyItems = initialDataset?.items.filter((item) => item.arModelUrl) ?? [];
+  const arReadyItems = initialDataset?.items.filter(hasArAsset) ?? [];
 
   if (!initialDataset) {
     return (
@@ -244,7 +245,7 @@ export function PublicRestaurantPage({
                           src={item.imageUrl}
                         />
                         {/* AR badge overlay */}
-                        {item.arModelUrl ? (
+                        {hasArAsset(item) ? (
                           <div className="absolute top-3 right-3">
                             <Badge className="bg-[#0f766e] text-white shadow-lg">
                               <Move3D className="mr-1 h-3 w-3" />
@@ -279,14 +280,14 @@ export function PublicRestaurantPage({
                           ))}
                         </div>
                         <div className="mt-auto pt-1">
-                          {item.arModelUrl ? (
+                          {hasArAsset(item) ? (
                             <Button
                               onClick={() => setActiveArItemId(item.id)}
                               type="button"
                               className="w-full bg-[#0f766e] text-white hover:bg-[#0d6b63]"
                             >
                               <Move3D className="h-4 w-4" />
-                              View in AR
+                              Open 3D Preview
                             </Button>
                           ) : null}
                         </div>

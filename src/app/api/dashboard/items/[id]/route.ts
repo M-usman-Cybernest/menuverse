@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteItemById, updateItemById } from "@/services/dashboard";
 import { getOptionalSession } from "@/lib/session";
+import { updateItemSchema } from "@/lib/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -13,7 +14,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
   const { id } = await params;
   try {
     const json = await request.json();
-    const items = await updateItemById(session, id, json);
+    const payload = updateItemSchema.parse(json);
+    const items = await updateItemById(session, id, payload);
     return NextResponse.json({ items }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ message: error instanceof Error ? error.message : "Error" }, { status: 400 });

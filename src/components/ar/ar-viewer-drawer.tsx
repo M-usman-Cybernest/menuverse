@@ -8,8 +8,8 @@ import { QrCodeTile } from "@/components/qr/qr-code-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatPrice } from "@/lib/utils";
 import type { MenuItem } from "@/lib/types";
+import { formatPrice } from "@/lib/utils";
 
 type ArViewerDrawerProps = {
   item: MenuItem | null;
@@ -73,6 +73,13 @@ export function ArViewerDrawer({
                     <p className="text-sm leading-6 text-[#4b5563]">
                       {item.description}
                     </p>
+                    {item.arModelIosUrl ? (
+                      <Button asChild size="sm" variant="outline">
+                        <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
+                          Open iOS Model
+                        </a>
+                      </Button>
+                    ) : null}
                     <div className="flex flex-wrap gap-2">
                       {item.dietaryTags.map((tag) => (
                         <Badge key={tag}>{tag}</Badge>

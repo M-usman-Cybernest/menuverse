@@ -15,6 +15,7 @@ const ALLOWED_IMAGE_TYPES = [
 const ALLOWED_MODEL_TYPES = [
   "model/gltf-binary",
   "model/gltf+json",
+  "model/vnd.usdz+zip",
   "application/octet-stream",
 ];
 

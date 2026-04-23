@@ -15,6 +15,26 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
     void import("@google/model-viewer");
   }, []);
 
+  if (!item.arModelUrl && item.arModelIosUrl) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#f7f3eb] p-6 text-center">
+        <div className="space-y-2">
+          <p className="text-lg font-semibold text-[#111827]">3D model ready</p>
+          <p className="max-w-md text-sm leading-6 text-[#6b7280]">
+            This item already has an iOS Quick Look model. Open it on a supported
+            iPhone or iPad for the native 3D preview.
+          </p>
+        </div>
+        <Button asChild size="lg">
+          <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
+            <Move3D className="h-4 w-4" />
+            Open 3D Model
+          </a>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <model-viewer
       alt={item.name}

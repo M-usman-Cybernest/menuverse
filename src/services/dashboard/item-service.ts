@@ -7,6 +7,7 @@ import {
   findUserById,
   findFirstRestaurant,
   findRestaurantByOwnerId,
+  getCategoriesForRestaurant,
   getMemoryState,
   getItemsForRestaurant,
 } from "./data-utils";
@@ -34,6 +35,13 @@ export async function createItem(
       ? await findFirstRestaurant()
       : await findRestaurantByOwnerId(currentUser.id);
   if (!restaurant) throw new Error("Restaurant not found.");
+  if (!input.categoryId) throw new Error("Category is required.");
+
+  const categories = await getCategoriesForRestaurant(restaurant.id);
+  const categoryExists = categories.some((category) => category.id === input.categoryId);
+  if (!categoryExists) {
+    throw new Error("Selected category does not exist for this restaurant.");
+  }
 
   const newId = createId("item");
 
@@ -85,18 +93,27 @@ export async function updateItemById(
     currentUser.role === "admin"
       ? await findFirstRestaurant()
       : await findRestaurantByOwnerId(currentUser.id);
+  if (!restaurant) throw new Error("Restaurant not found.");
+
+  if (input.categoryId) {
+    const categories = await getCategoriesForRestaurant(restaurant.id);
+    const categoryExists = categories.some((category) => category.id === input.categoryId);
+    if (!categoryExists) {
+      throw new Error("Selected category does not exist for this restaurant.");
+    }
+  }
 
   if (isDatabaseConfigured()) {
     await connectToDatabase();
     await MenuItemModel.findOneAndUpdate({ appId: itemId }, { $set: input });
-    return getItemsForRestaurant(restaurant?.id ?? "");
+    return getItemsForRestaurant(restaurant.id);
   }
 
   const state = getMemoryState();
   state.items = state.items.map((i) =>
     i.id === itemId ? { ...i, ...input } : i,
   );
-  return getItemsForRestaurant(restaurant?.id ?? "");
+  return getItemsForRestaurant(restaurant.id);
 }
 
 export async function deleteItemById(

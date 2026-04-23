@@ -13,11 +13,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
+import { hasArAsset } from "@/lib/storage";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
 
 export function DashboardOverview() {
   const { bundle, categories, items, publicUrl, restaurant } = useDashboard();
-  const arReady = items.filter((item) => item.arModelUrl);
+  const arReady = items.filter(hasArAsset);
   const featured = items.find((item) => item.featured) ?? items[0] ?? null;
 
   return (

@@ -11,10 +11,12 @@ import {
   Upload,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
-import { API_DASHBOARD_UPLOAD } from "@/lib/api-routes";
+import { API_DASHBOARD_UPLOAD, API_GOOGLE_CALLBACK } from "@/lib/api-routes";
+import type { ExternalStorageProvider, ItemAssetTarget } from "@/lib/storage";
+import { hasArAsset } from "@/lib/storage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +53,15 @@ const EMPTY_ITEM: ItemForm = {
   categoryId: "",
 };
 
+const STORAGE_PROVIDER_OPTIONS: Array<{
+  label: string;
+  value: ExternalStorageProvider;
+}> = [
+  { label: "UploadThing", value: "uploadthing" },
+  { label: "Google Drive", value: "google-drive" },
+  { label: "Direct URL", value: "direct-url" },
+];
+
 export function DashboardMenuPage() {
   const {
     availableTags,
@@ -75,6 +86,12 @@ export function DashboardMenuPage() {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [editItemId, setEditItemId] = useState<string | null>(null);
+  const [storageModalOpen, setStorageModalOpen] = useState(false);
+  const [storageTarget, setStorageTarget] = useState<ItemAssetTarget>("imageUrl");
+  const [storageProvider, setStorageProvider] =
+    useState<ExternalStorageProvider>("uploadthing");
+  const [storageUrl, setStorageUrl] = useState("");
+  const [storageError, setStorageError] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
@@ -86,6 +103,41 @@ export function DashboardMenuPage() {
 
   // Tag editor panel
   const [tagEditorItemId, setTagEditorItemId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleExternalAssetMessage(event: MessageEvent) {
+      if (
+        !event.data ||
+        typeof event.data !== "object" ||
+        event.data.type !== "menuverse-external-asset"
+      ) {
+        return;
+      }
+
+      const asset = event.data.asset as
+        | { target?: ItemAssetTarget; url?: string }
+        | undefined;
+
+      if (!asset?.target || !asset?.url) {
+        return;
+      }
+
+      const target = asset.target as keyof ItemForm;
+
+      setItemForm((previous) => ({
+        ...previous,
+        [target]: asset.url,
+      }));
+      setStorageModalOpen(false);
+      setStorageUrl("");
+      setStorageError("");
+    }
+
+    window.addEventListener("message", handleExternalAssetMessage);
+    return () => {
+      window.removeEventListener("message", handleExternalAssetMessage);
+    };
+  }, []);
 
   const filteredItems =
     filterCategoryId === "all"
@@ -99,6 +151,7 @@ export function DashboardMenuPage() {
       setter(true);
 
       try {
+        setStorageError("");
         const formData = new FormData();
         formData.append("file", file);
 
@@ -130,7 +183,10 @@ export function DashboardMenuPage() {
             arModelIosUrl: result.url,
           }));
         }
-      } catch {
+      } catch (error) {
+        setStorageError(
+          error instanceof Error ? error.message : "Upload failed. Please retry.",
+        );
         // Silently fail – user can retry
       } finally {
         setter(false);
@@ -170,6 +226,7 @@ export function DashboardMenuPage() {
 
   // Item modal handlers
   function openAddItem() {
+    setStorageError("");
     setItemForm({
       ...EMPTY_ITEM,
       categoryId: categories[0]?.id ?? "",
@@ -181,6 +238,7 @@ export function DashboardMenuPage() {
   function openEditItem(itemId: string) {
     const item = items.find((i) => i.id === itemId);
     if (!item) return;
+    setStorageError("");
     setItemForm({
       name: item.name,
       description: item.description,
@@ -198,6 +256,7 @@ export function DashboardMenuPage() {
     if (!itemForm.name.trim() || !itemForm.categoryId) return;
 
     const data = {
+      categoryId: itemForm.categoryId,
       name: itemForm.name.trim(),
       description: itemForm.description.trim(),
       price: itemForm.price,
@@ -211,6 +270,57 @@ export function DashboardMenuPage() {
     if (success) {
       setItemModalOpen(false);
       setItemForm(EMPTY_ITEM);
+    }
+  }
+
+  function openStorageModal(target: ItemAssetTarget) {
+    setStorageTarget(target);
+    setStorageProvider(target === "imageUrl" ? "uploadthing" : "google-drive");
+    setStorageUrl(itemForm[target]);
+    setStorageError("");
+    setStorageModalOpen(true);
+  }
+
+  async function applyStorageUrl() {
+    if (!storageUrl.trim()) {
+      setStorageError("Paste a hosted file URL first.");
+      return;
+    }
+
+    try {
+      setStorageError("");
+      const response = await fetch(API_GOOGLE_CALLBACK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          provider: storageProvider,
+          target: storageTarget,
+          url: storageUrl.trim(),
+        }),
+      });
+
+      const payload = (await response.json()) as
+        | { asset: { target: ItemAssetTarget; url: string } }
+        | { message: string };
+
+      if (!response.ok || !("asset" in payload)) {
+        throw new Error(
+          "message" in payload ? payload.message : "Could not attach the asset.",
+        );
+      }
+
+      setItemForm((previous) => ({
+        ...previous,
+        [payload.asset.target]: payload.asset.url,
+      }));
+      setStorageModalOpen(false);
+      setStorageUrl("");
+    } catch (error) {
+      setStorageError(
+        error instanceof Error ? error.message : "Could not attach the asset.",
+      );
     }
   }
 
@@ -392,7 +502,7 @@ export function DashboardMenuPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-center">
-                        {item.arModelUrl ? (
+                        {hasArAsset(item) ? (
                           <Badge variant="accent">3D</Badge>
                         ) : (
                           <span className="text-xs text-[#d9cdbb]">—</span>
@@ -555,6 +665,11 @@ export function DashboardMenuPage() {
         maxWidth="max-w-xl"
       >
         <div className="space-y-4">
+          {storageError ? (
+            <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
+              {storageError}
+            </Badge>
+          ) : null}
           {/* Category selector */}
           <Field label="Category">
             <select
@@ -619,8 +734,29 @@ export function DashboardMenuPage() {
                     </>
                   )}
                 </button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => openStorageModal("imageUrl")}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    Use Storage Link
+                  </Button>
+                </div>
               </div>
             </div>
+            <Input
+              className="mt-3"
+              placeholder="https://utfs.io/f/... or https://drive.google.com/file/d/..."
+              value={itemForm.imageUrl}
+              onChange={(event) =>
+                setItemForm((previous) => ({
+                  ...previous,
+                  imageUrl: event.target.value,
+                }))
+              }
+            />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -696,6 +832,24 @@ export function DashboardMenuPage() {
                   <Upload className="h-4 w-4" />
                   <span>Upload .glb</span>
                 </button>
+                <Button
+                  onClick={() => openStorageModal("arModelUrl")}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Storage Link
+                </Button>
+                <Input
+                  placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
+                  value={itemForm.arModelUrl}
+                  onChange={(event) =>
+                    setItemForm((previous) => ({
+                      ...previous,
+                      arModelUrl: event.target.value,
+                    }))
+                  }
+                />
               </div>
             </Field>
 
@@ -727,6 +881,24 @@ export function DashboardMenuPage() {
                   <Upload className="h-4 w-4" />
                   <span>Upload .usdz</span>
                 </button>
+                <Button
+                  onClick={() => openStorageModal("arModelIosUrl")}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Storage Link
+                </Button>
+                <Input
+                  placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
+                  value={itemForm.arModelIosUrl}
+                  onChange={(event) =>
+                    setItemForm((previous) => ({
+                      ...previous,
+                      arModelIosUrl: event.target.value,
+                    }))
+                  }
+                />
               </div>
             </Field>
           </div>
@@ -740,6 +912,51 @@ export function DashboardMenuPage() {
             </Button>
             <Button onClick={submitItem} disabled={!itemForm.name.trim() || !itemForm.categoryId}>
               {editItemId ? "Update Item" : "Add Item"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={storageModalOpen}
+        onClose={() => setStorageModalOpen(false)}
+        title="Attach External Asset"
+        description="Use a hosted UploadThing, Google Drive, or direct file URL."
+      >
+        <div className="space-y-4">
+          <Field label="Storage Provider">
+            <select
+              value={storageProvider}
+              onChange={(event) =>
+                setStorageProvider(event.target.value as ExternalStorageProvider)
+              }
+              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
+            >
+              {STORAGE_PROVIDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Hosted File URL">
+            <Input
+              autoFocus
+              placeholder="Paste the public file URL"
+              value={storageUrl}
+              onChange={(event) => setStorageUrl(event.target.value)}
+            />
+          </Field>
+          {storageError ? (
+            <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
+              {storageError}
+            </Badge>
+          ) : null}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setStorageModalOpen(false)} variant="outline">
+              Cancel
+            </Button>
+            <Button onClick={() => void applyStorageUrl()}>
+              Attach Asset
             </Button>
           </div>
         </div>
