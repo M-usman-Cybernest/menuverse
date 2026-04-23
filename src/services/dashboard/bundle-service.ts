@@ -100,6 +100,7 @@ export async function saveRestaurantBundle(
     id: it.id || createId("item"),
     restaurantId,
     categoryId: categories.find((c) => c.id === it.categoryId)?.id || fallbackCategoryId,
+    description: it.description?.trim() ?? "",
   }));
 
   if (isDatabaseConfigured()) {

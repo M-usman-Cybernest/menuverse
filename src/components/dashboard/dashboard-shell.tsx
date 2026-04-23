@@ -9,6 +9,7 @@ import {
   Settings,
   Settings2,
   Store,
+  Unplug,
   Users,
   X,
 } from "lucide-react";
@@ -43,6 +44,12 @@ const navigation = [
     href: "/dashboard/settings",
     icon: Settings,
     label: "Settings",
+    manageOnly: true,
+  },
+  {
+    href: "/dashboard/google-connect",
+    icon: Unplug,
+    label: "Google Connect",
     manageOnly: true,
   },
   {

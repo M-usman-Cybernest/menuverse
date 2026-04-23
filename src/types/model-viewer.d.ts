@@ -6,8 +6,15 @@ type ModelViewerAttributes = DetailedHTMLProps<
 > & {
   alt?: string;
   ar?: boolean;
+  ["ar-scale"]?: string;
   autoplay?: boolean;
+  ["camera-orbit"]?: string;
+  ["camera-target"]?: string;
   exposure?: string;
+  ["field-of-view"]?: string;
+  ["interaction-prompt-style"]?: string;
+  ["interpolation-decay"]?: string;
+  ["orbit-sensitivity"]?: string;
   poster?: string;
   src?: string;
   slot?: string;
@@ -18,8 +25,13 @@ type ModelViewerAttributes = DetailedHTMLProps<
   ["environment-image"]?: string;
   ["interaction-prompt"]?: string;
   ["ios-src"]?: string;
+  ["max-camera-orbit"]?: string;
+  ["max-field-of-view"]?: string;
+  ["min-camera-orbit"]?: string;
+  ["min-field-of-view"]?: string;
   ["shadow-intensity"]?: string;
   ["touch-action"]?: string;
+  ["zoom-sensitivity"]?: string;
 };
 
 declare module "react/jsx-runtime" {

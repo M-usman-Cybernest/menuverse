@@ -4,10 +4,11 @@ import { motion } from "framer-motion";
 import { Clock3, Eye, LocateFixed, Move3D, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { ArViewerDrawer } from "@/components/ar/ar-viewer-drawer";
+import { ModelViewerElement } from "@/components/ar/model-viewer-element";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,12 +34,12 @@ export function PublicRestaurantPage({
   initialDataset,
   publicPath,
 }: PublicRestaurantPageProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeArItemId, setActiveArItemId] = useState(
-    () => searchParams.get("item") ?? "",
-  );
+  const [manualArItemId, setManualArItemId] = useState("");
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [activeItemModalId, setActiveItemModalId] = useState("");
+  const [isDesktop, setIsDesktop] = useState(false);
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -68,13 +69,28 @@ export function PublicRestaurantPage({
   const todayTiming = initialDataset?.restaurant.timings.find(
     (entry) => entry.day === getTodayLabel(),
   );
+  const requestedArItemId = searchParams.get("item") ?? "";
   const activeItem =
     initialDataset?.items.find(
-      (item) => item.id === activeArItemId && hasArAsset(item),
+      (item) =>
+        item.id === (isDesktop ? requestedArItemId : manualArItemId) &&
+        hasArAsset(item),
     ) ?? null;
   const activeModalItem =
     initialDataset?.items.find((item) => item.id === activeItemModalId) ?? null;
   const arReadyItems = initialDataset?.items.filter(hasArAsset) ?? [];
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateIsDesktop = () => setIsDesktop(mediaQuery.matches);
+
+    updateIsDesktop();
+    mediaQuery.addEventListener("change", updateIsDesktop);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsDesktop);
+    };
+  }, []);
 
   if (!initialDataset) {
     return (
@@ -92,6 +108,34 @@ export function PublicRestaurantPage({
   }
 
   const qrBaseValue = publicPath === "/" ? origin : `${origin}${publicPath}`;
+
+  function syncItemQuery(itemId: string) {
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+
+    if (itemId) {
+      nextSearchParams.set("item", itemId);
+    } else {
+      nextSearchParams.delete("item");
+    }
+
+    const query = nextSearchParams.toString();
+    router.replace(query ? `${publicPath}?${query}` : publicPath, {
+      scroll: false,
+    });
+  }
+
+  function openArViewer(itemId: string) {
+    setActiveItemModalId("");
+    if (!isDesktop) {
+      setManualArItemId(itemId);
+    }
+    syncItemQuery(itemId);
+  }
+
+  function closeArViewer() {
+    setManualArItemId("");
+    syncItemQuery("");
+  }
 
   return (
     <>
@@ -170,21 +214,6 @@ export function PublicRestaurantPage({
                   </div>
                 ) : null}
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                {arReadyItems.slice(0, 3).map((item) => (
-                  <Button
-                    key={item.id}
-                    onClick={() => setActiveArItemId(item.id)}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Move3D className="h-4 w-4" />
-                    {item.name}
-                  </Button>
-                ))}
-              </div>
             </div>
           </div>
         </section>
@@ -224,23 +253,24 @@ export function PublicRestaurantPage({
                   {category.description}
                 </h2>
               </div>
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 {items.map((item) => (
                   <motion.div
                     key={item.id}
+                    className="h-full"
                     initial={{ opacity: 0, y: 18 }}
                     transition={{ duration: 0.24, ease: "easeOut" }}
                     viewport={{ once: true, amount: 0.2 }}
                     whileHover={{ y: -4 }}
                     whileInView={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="h-full overflow-hidden">
+                    <Card className="flex h-full flex-col overflow-hidden rounded-[1.4rem] border-[#e8dccb] bg-white">
                       <div className="relative aspect-[4/3] overflow-hidden">
                         <Image
                           alt={item.name}
                           className="object-cover"
                           fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           src={item.imageUrl}
                         />
                         {hasArAsset(item) ? (
@@ -252,10 +282,10 @@ export function PublicRestaurantPage({
                           </div>
                         ) : null}
                       </div>
-                      <CardContent className="flex h-full flex-col space-y-4 p-5">
+                      <CardContent className="flex flex-1 flex-col p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1">
-                            <h3 className="text-xl font-semibold tracking-tight text-[#111827]">
+                            <h3 className="text-lg font-semibold tracking-tight text-[#111827] xl:text-xl">
                               {item.name}
                             </h3>
                             <p className="text-sm text-[#6b7280]">{item.prepTime}</p>
@@ -264,10 +294,10 @@ export function PublicRestaurantPage({
                             {formatPrice(item.price)}
                           </p>
                         </div>
-                        <p className="text-sm leading-6 text-[#4b5563]">
-                          {item.description}
+                        <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#4b5563]">
+                          {item.description || "No description added yet."}
                         </p>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="mt-4 flex min-h-11 flex-wrap gap-2">
                           {item.dietaryTags.map((tag) => (
                             <Badge
                               key={tag}
@@ -277,9 +307,9 @@ export function PublicRestaurantPage({
                             </Badge>
                           ))}
                         </div>
-                        <div className="mt-auto flex flex-wrap gap-2 pt-1">
+                        <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
                           <Button
-                            className="flex-1"
+                            className="w-full sm:flex-1"
                             onClick={() => setActiveItemModalId(item.id)}
                             type="button"
                             variant="outline"
@@ -289,12 +319,12 @@ export function PublicRestaurantPage({
                           </Button>
                           {hasArAsset(item) ? (
                             <Button
-                              className="flex-1 bg-[#0f766e] text-white hover:bg-[#0d6b63]"
-                              onClick={() => setActiveArItemId(item.id)}
+                              className="w-full bg-[#0f766e] text-white hover:bg-[#0d6b63] sm:flex-1"
+                              onClick={() => openArViewer(item.id)}
                               type="button"
                             >
                               <Move3D className="h-4 w-4" />
-                              Open 3D Preview
+                              View 3D Model
                             </Button>
                           ) : null}
                         </div>
@@ -382,6 +412,25 @@ export function PublicRestaurantPage({
               />
             </div>
 
+            {hasArAsset(activeModalItem) ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#111827]">
+                      Product 3D preview
+                    </p>
+                    <p className="text-sm text-[#6b7280]">
+                      This dialog now renders the selected item&apos;s own 3D model.
+                    </p>
+                  </div>
+                  <Badge variant="accent">Interactive</Badge>
+                </div>
+                <div className="min-h-[320px] overflow-hidden rounded-2xl border border-[#ece4d8] bg-white">
+                  <ModelViewerElement item={activeModalItem} key={activeModalItem.id} />
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap gap-2">
               {activeModalItem.dietaryTags.map((tag) => (
                 <Badge
@@ -421,13 +470,12 @@ export function PublicRestaurantPage({
               {hasArAsset(activeModalItem) ? (
                 <Button
                   onClick={() => {
-                    setActiveItemModalId("");
-                    setActiveArItemId(activeModalItem.id);
+                    openArViewer(activeModalItem.id);
                   }}
                   type="button"
                 >
                   <Move3D className="h-4 w-4" />
-                  Open 3D Preview
+                  View 3D Model
                 </Button>
               ) : null}
               <Button
@@ -444,7 +492,7 @@ export function PublicRestaurantPage({
 
       <ArViewerDrawer
         item={activeItem}
-        onClose={() => setActiveArItemId("")}
+        onClose={closeArViewer}
         open={Boolean(activeItem)}
         qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}`}
         restaurantName={initialDataset.restaurant.name}
