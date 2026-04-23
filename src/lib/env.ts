@@ -14,12 +14,12 @@ export const env = {
   ),
   mongodbUri: process.env.MONGODB_URI?.trim() ?? "",
   mongodbDb: getEnvValue(process.env.MONGODB_DB, "menuverse"),
-  adminEmail: getEnvValue(process.env.ADMIN_EMAIL, "admin@menuverse.local"),
+  adminEmail: getEnvValue(process.env.ADMIN_EMAIL, "[EMAIL_ADDRESS]"),
   adminPassword: getEnvValue(process.env.ADMIN_PASSWORD, "Admin123!"),
   adminName: getEnvValue(process.env.ADMIN_NAME, "MenuVerse Admin"),
   seedOwnerEmail: getEnvValue(
     process.env.SEED_OWNER_EMAIL,
-    "owner@lunatable.co",
+    "[EMAIL_ADDRESS]",
   ),
   seedOwnerPassword: getEnvValue(
     process.env.SEED_OWNER_PASSWORD,

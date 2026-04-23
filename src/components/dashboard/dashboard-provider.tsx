@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 
+import { API_DASHBOARD_RESTAURANT } from "@/lib/api-routes";
 import { DIETARY_TAGS, WEEK_DAYS } from "@/lib/constants";
 import type {
   Branch,
@@ -12,6 +13,13 @@ import type {
   RestaurantProfile,
 } from "@/lib/types";
 import { createId, getPublicRestaurantUrl, slugify } from "@/lib/utils";
+
+type ItemInitial = Partial<
+  Pick<
+    MenuItem,
+    "name" | "description" | "price" | "imageUrl" | "arModelUrl" | "arModelIosUrl"
+  >
+>;
 
 type DashboardContextValue = {
   availableTags: readonly DietaryTag[];
@@ -39,7 +47,7 @@ type DashboardContextValue = {
     value: Branch[keyof Branch],
   ) => void;
   removeBranch: (branchId: string) => void;
-  addCategory: () => void;
+  addCategory: (name?: string, description?: string) => string;
   updateCategory: (
     categoryId: string,
     key: keyof MenuCategory,
@@ -47,7 +55,7 @@ type DashboardContextValue = {
   ) => void;
   moveCategory: (categoryId: string, direction: "left" | "right") => void;
   removeCategory: (categoryId: string) => void;
-  addItem: (categoryId: string) => void;
+  addItem: (categoryId: string, initial?: ItemInitial) => void;
   updateItem: (
     itemId: string,
     key: keyof MenuItem,
@@ -272,7 +280,9 @@ export function DashboardProvider({
     });
   }
 
-  function addCategory() {
+  function addCategory(name?: string, description?: string) {
+    const newId = createId("category");
+
     setBundle((current) => {
       if (!current.restaurant) {
         return current;
@@ -283,15 +293,17 @@ export function DashboardProvider({
         categories: [
           ...sortCategories(current.categories),
           {
-            id: createId("category"),
+            id: newId,
             restaurantId: current.restaurant.id,
-            name: "New Category",
+            name: name || "New Category",
             order: current.categories.length,
-            description: "Describe this menu section.",
+            description: description || "Describe this menu section.",
           },
         ],
       };
     });
+
+    return newId;
   }
 
   function updateCategory(
@@ -362,7 +374,7 @@ export function DashboardProvider({
     });
   }
 
-  function addItem(categoryId: string) {
+  function addItem(categoryId: string, initial?: ItemInitial) {
     setBundle((current) => {
       if (!current.restaurant) {
         return current;
@@ -376,10 +388,14 @@ export function DashboardProvider({
             id: createId("item"),
             restaurantId: current.restaurant.id,
             categoryId,
-            name: "New Menu Item",
-            description: "Describe ingredients, prep time, and selling point.",
-            price: 16,
-            imageUrl: "/images/dessert.jpg",
+            name: initial?.name || "New Menu Item",
+            description:
+              initial?.description ||
+              "Describe ingredients, prep time, and selling point.",
+            price: initial?.price ?? 16,
+            imageUrl: initial?.imageUrl || "/images/dessert.jpg",
+            arModelUrl: initial?.arModelUrl,
+            arModelIosUrl: initial?.arModelIosUrl,
             dietaryTags: ["New"],
             prepTime: "10 min",
           },
@@ -436,7 +452,7 @@ export function DashboardProvider({
     setSaveSuccess("");
 
     try {
-      const response = await fetch("/api/dashboard/restaurant", {
+      const response = await fetch(API_DASHBOARD_RESTAURANT, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

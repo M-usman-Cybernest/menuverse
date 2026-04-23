@@ -35,9 +35,7 @@ export function PublicRestaurantPage({
   const [activeArItemId, setActiveArItemId] = useState(
     () => searchParams.get("item") ?? "",
   );
-  const [activeCategoryId, setActiveCategoryId] = useState(
-    initialDataset?.categories[0]?.id ?? "",
-  );
+  const [activeCategoryId, setActiveCategoryId] = useState("all");
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -56,6 +54,12 @@ export function PublicRestaurantPage({
       }));
   }, [initialDataset]);
 
+  // Filtered sections based on active category
+  const filteredSections = useMemo(() => {
+    if (activeCategoryId === "all") return sections;
+    return sections.filter((s) => s.category.id === activeCategoryId);
+  }, [sections, activeCategoryId]);
+
   const todayTiming = initialDataset?.restaurant.timings.find(
     (entry) => entry.day === getTodayLabel(),
   );
@@ -63,6 +67,9 @@ export function PublicRestaurantPage({
     initialDataset?.items.find(
       (item) => item.id === activeArItemId && item.arModelUrl,
     ) ?? null;
+
+  // Count of AR-ready items
+  const arReadyItems = initialDataset?.items.filter((item) => item.arModelUrl) ?? [];
 
   if (!initialDataset) {
     return (
@@ -152,11 +159,16 @@ export function PublicRestaurantPage({
                   <Store className="h-4 w-4" />
                   {initialDataset.restaurant.branches.length} branches
                 </div>
+                {arReadyItems.length > 0 ? (
+                  <div className="inline-flex items-center gap-2 rounded-md bg-[#0f766e]/40 px-3 py-2 text-white">
+                    <Move3D className="h-4 w-4" />
+                    {arReadyItems.length} AR-ready items
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {initialDataset.items
-                  .filter((item) => item.arModelUrl)
+                {arReadyItems
                   .slice(0, 3)
                   .map((item) => (
                     <Button
@@ -175,8 +187,17 @@ export function PublicRestaurantPage({
           </div>
         </section>
 
+        {/* Category filter bar */}
         <section className="border-b border-[#ece4d8] bg-[#fffaf2]">
           <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-4 sm:px-6 lg:px-8">
+            <Button
+              onClick={() => setActiveCategoryId("all")}
+              size="sm"
+              type="button"
+              variant={activeCategoryId === "all" ? "default" : "secondary"}
+            >
+              All
+            </Button>
             {sections.map(({ category }) => (
               <Button
                 key={category.id}
@@ -191,8 +212,9 @@ export function PublicRestaurantPage({
           </div>
         </section>
 
+        {/* Menu items grid */}
         <section className="mx-auto max-w-7xl space-y-12 px-4 py-8 sm:px-6 lg:px-8">
-          {sections.map(({ category, items }) => (
+          {filteredSections.map(({ category, items }) => (
             <div id={category.id} key={category.id} className="space-y-5">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
@@ -221,6 +243,15 @@ export function PublicRestaurantPage({
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                           src={item.imageUrl}
                         />
+                        {/* AR badge overlay */}
+                        {item.arModelUrl ? (
+                          <div className="absolute top-3 right-3">
+                            <Badge className="bg-[#0f766e] text-white shadow-lg">
+                              <Move3D className="mr-1 h-3 w-3" />
+                              AR Ready
+                            </Badge>
+                          </div>
+                        ) : null}
                       </div>
                       <CardContent className="flex h-full flex-col space-y-4 p-5">
                         <div className="flex items-start justify-between gap-3">
@@ -249,7 +280,11 @@ export function PublicRestaurantPage({
                         </div>
                         <div className="mt-auto pt-1">
                           {item.arModelUrl ? (
-                            <Button onClick={() => setActiveArItemId(item.id)} type="button">
+                            <Button
+                              onClick={() => setActiveArItemId(item.id)}
+                              type="button"
+                              className="w-full bg-[#0f766e] text-white hover:bg-[#0d6b63]"
+                            >
                               <Move3D className="h-4 w-4" />
                               View in AR
                             </Button>
@@ -264,6 +299,7 @@ export function PublicRestaurantPage({
           ))}
         </section>
 
+        {/* Timings & Branches */}
         <section className="border-t border-[#ece4d8] bg-[#fffaf2]">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
             <div className="space-y-4">

@@ -3,9 +3,16 @@
 import { Plus, Save, Trash2 } from "lucide-react";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
+import { MapPicker } from "@/components/dashboard/map-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export function DashboardBranchesPage() {
@@ -28,8 +35,10 @@ export function DashboardBranchesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#0f766e]">Branch Management</p>
-          <h2 className="text-3xl font-semibold tracking-tight">
+          <p className="text-sm font-semibold text-[#0f766e]">
+            Branch Management
+          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">
             Multi-location restaurant setup
           </h2>
         </div>
@@ -58,7 +67,8 @@ export function DashboardBranchesPage() {
             <CardHeader>
               <CardTitle>{branch.name}</CardTitle>
               <CardDescription>
-                Keep address, directions, and table counts clean for every branch.
+                Keep address, directions, and table counts clean for every
+                branch.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
@@ -103,19 +113,34 @@ export function DashboardBranchesPage() {
                 <Input
                   value={branch.directionsLabel}
                   onChange={(event) =>
-                    updateBranch(branch.id, "directionsLabel", event.target.value)
+                    updateBranch(
+                      branch.id,
+                      "directionsLabel",
+                      event.target.value,
+                    )
                   }
                 />
               </Field>
-              <Field className="md:col-span-2" label="Google Maps Link">
-                <Input
+
+              {/* Map Picker instead of URL input */}
+              <div className="md:col-span-2">
+                <span className="mb-2 block text-sm font-medium text-[#374151]">
+                  Location
+                </span>
+                <MapPicker
+                  locationLabel={branch.address}
                   value={branch.mapsUrl}
-                  onChange={(event) =>
-                    updateBranch(branch.id, "mapsUrl", event.target.value)
+                  onLabelChange={(label) =>
+                    updateBranch(branch.id, "address", label)
                   }
+                  onLocationChange={(url) =>
+                    updateBranch(branch.id, "mapsUrl", url)
+                  }
+                  height={180}
                 />
-              </Field>
-              <div className="md:col-span-2 flex justify-end">
+              </div>
+
+              <div className="flex justify-end md:col-span-2">
                 <Button
                   onClick={() => removeBranch(branch.id)}
                   type="button"
@@ -144,7 +169,9 @@ function Field({
 }) {
   return (
     <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-[#374151]">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-[#374151]">
+        {label}
+      </span>
       {children}
     </label>
   );

@@ -3,9 +3,16 @@
 import { Save } from "lucide-react";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
+import { MapPicker } from "@/components/dashboard/map-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatTimeRange, slugify } from "@/lib/utils";
@@ -29,8 +36,12 @@ export function DashboardProfilePage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#0f766e]">Restaurant Profile</p>
-          <h2 className="text-3xl font-semibold tracking-tight">Brand and publishing</h2>
+          <p className="text-sm font-semibold text-[#0f766e]">
+            Restaurant Profile
+          </p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Brand and publishing
+          </h2>
         </div>
         <Button onClick={() => void saveRestaurant()} disabled={saving}>
           <Save className="h-4 w-4" />
@@ -43,7 +54,8 @@ export function DashboardProfilePage() {
           <CardHeader>
             <CardTitle>Restaurant details</CardTitle>
             <CardDescription>
-              Everything that appears on the public page and restaurant QR destination.
+              Everything that appears on the public page and restaurant QR
+              destination.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
@@ -59,7 +71,10 @@ export function DashboardProfilePage() {
               <Input
                 value={restaurant.slug}
                 onChange={(event) =>
-                  updateRestaurantField("slug", slugify(event.target.value) || "restaurant")
+                  updateRestaurantField(
+                    "slug",
+                    slugify(event.target.value) || "restaurant",
+                  )
                 }
               />
             </Field>
@@ -113,22 +128,23 @@ export function DashboardProfilePage() {
                 }
               />
             </Field>
-            <Field className="md:col-span-2" label="Location Label">
-              <Input
-                value={restaurant.locationLabel}
-                onChange={(event) =>
-                  updateRestaurantField("locationLabel", event.target.value)
-                }
-              />
-            </Field>
-            <Field className="md:col-span-2" label="Google Maps Link">
-              <Input
+
+            {/* Location with Map Picker */}
+            <div className="md:col-span-2">
+              <span className="mb-2 block text-sm font-medium text-[#374151]">
+                Location
+              </span>
+              <MapPicker
+                locationLabel={restaurant.locationLabel}
                 value={restaurant.locationMapsUrl}
-                onChange={(event) =>
-                  updateRestaurantField("locationMapsUrl", event.target.value)
+                onLabelChange={(label) =>
+                  updateRestaurantField("locationLabel", label)
+                }
+                onLocationChange={(url) =>
+                  updateRestaurantField("locationMapsUrl", url)
                 }
               />
-            </Field>
+            </div>
           </CardContent>
         </Card>
 
@@ -150,7 +166,10 @@ export function DashboardProfilePage() {
                 </div>
                 <Button
                   onClick={() =>
-                    updateRestaurantField("isPublished", !restaurant.isPublished)
+                    updateRestaurantField(
+                      "isPublished",
+                      !restaurant.isPublished,
+                    )
                   }
                   variant={restaurant.isPublished ? "default" : "secondary"}
                 >
@@ -158,11 +177,16 @@ export function DashboardProfilePage() {
                 </Button>
               </div>
               {saveError ? (
-                <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
+                <Badge
+                  className="bg-[#ffe8d6] text-[#c2410c]"
+                  variant="warm"
+                >
                   {saveError}
                 </Badge>
               ) : null}
-              {saveSuccess ? <Badge variant="accent">{saveSuccess}</Badge> : null}
+              {saveSuccess ? (
+                <Badge variant="accent">{saveSuccess}</Badge>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -183,7 +207,11 @@ export function DashboardProfilePage() {
                     <div>
                       <p className="font-semibold">{timing.day}</p>
                       <p className="text-sm text-[#6b7280]">
-                        {formatTimeRange(timing.open, timing.close, timing.closed)}
+                        {formatTimeRange(
+                          timing.open,
+                          timing.close,
+                          timing.closed,
+                        )}
                       </p>
                     </div>
                     <Button
@@ -233,7 +261,9 @@ function Field({
 }) {
   return (
     <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-[#374151]">{label}</span>
+      <span className="mb-2 block text-sm font-medium text-[#374151]">
+        {label}
+      </span>
       {children}
     </label>
   );

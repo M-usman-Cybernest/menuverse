@@ -5,7 +5,13 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
 
@@ -16,42 +22,39 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          helper="Editable categories for starters, mains, drinks, and more."
+          icon={<Layers3 className="h-4 w-4" />}
           title="Categories"
           value={categories.length.toString()}
-          icon={<Layers3 className="h-4 w-4" />}
         />
         <MetricCard
-          helper="Total items currently published to the public menu."
+          icon={<Store className="h-4 w-4" />}
           title="Menu Items"
           value={items.length.toString()}
-          icon={<Store className="h-4 w-4" />}
         />
         <MetricCard
-          helper="Dishes with a linked `.glb`, `.gltf`, or `.usdz` asset."
+          icon={<Move3D className="h-4 w-4" />}
           title="AR Ready"
           value={arReady.length.toString()}
-          icon={<Move3D className="h-4 w-4" />}
         />
         <MetricCard
-          helper="Restaurant-wide and item-level codes are available from QR Export."
+          icon={<QrCode className="h-4 w-4" />}
           title="QR Surfaces"
           value={featured ? "2" : "1"}
-          icon={<QrCode className="h-4 w-4" />}
         />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        {/* Hero card */}
         <Card className="overflow-hidden">
-          <div className="relative overflow-hidden bg-[#111827] px-5 py-6 text-white">
+          <div className="relative overflow-hidden bg-[#111827] px-5 py-5 text-white">
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,118,110,0.28),rgba(17,24,39,0.96))]" />
-            <div className="relative space-y-3">
+            <div className="relative space-y-2">
               <Badge className="bg-white/10 text-white" variant="dark">
                 Public Experience
               </Badge>
-              <h2 className="text-3xl font-semibold tracking-tight">
+              <h2 className="text-2xl font-semibold tracking-tight">
                 {restaurant?.name ?? "MenuVerse Restaurant"}
               </h2>
               <p className="max-w-2xl text-sm leading-6 text-white/75">
@@ -61,7 +64,7 @@ export function DashboardOverview() {
             </div>
           </div>
           <CardContent className="space-y-4 p-5">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <InfoBlock
                 label="Location"
                 value={restaurant?.locationLabel ?? "Add your location"}
@@ -72,14 +75,14 @@ export function DashboardOverview() {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild>
+              <Button asChild size="sm">
                 <Link href="/dashboard/profile">Edit Profile</Link>
               </Button>
-              <Button asChild variant="secondary">
+              <Button asChild size="sm" variant="secondary">
                 <Link href="/dashboard/menu">Manage Menu</Link>
               </Button>
               {publicUrl ? (
-                <Button asChild variant="outline">
+                <Button asChild size="sm" variant="outline">
                   <a href={publicUrl} rel="noreferrer" target="_blank">
                     Open Public Menu
                   </a>
@@ -90,21 +93,22 @@ export function DashboardOverview() {
         </Card>
 
         <div className="grid gap-6">
+          {/* Today at a glance */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <CardTitle>Today at a glance</CardTitle>
               <CardDescription>
                 Quick pulse check before you send out the QR code.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2">
               {(restaurant?.timings ?? []).slice(0, 4).map((timing) => (
                 <div
                   key={timing.day}
-                  className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3"
+                  className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-2.5"
                 >
-                  <span className="font-medium">{timing.day}</span>
-                  <span className="text-sm text-[#6b7280]">
+                  <span className="text-sm font-medium">{timing.day}</span>
+                  <span className="text-xs text-[#6b7280]">
                     {formatTimeRange(timing.open, timing.close, timing.closed)}
                   </span>
                 </div>
@@ -112,24 +116,31 @@ export function DashboardOverview() {
             </CardContent>
           </Card>
 
+          {/* Featured dish */}
           {featured ? (
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle>Featured Dish</CardTitle>
                 <CardDescription>
-                  Handy for spotlighting the card that deserves the first scan.
+                  Spotlighting the card that deserves the first scan.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold">{featured.name}</p>
-                  <p className="text-sm text-[#6b7280]">{featured.description}</p>
+                  <p className="font-semibold">{featured.name}</p>
+                  <p className="text-sm text-[#6b7280]">
+                    {featured.description}
+                  </p>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#6b7280]">{featured.prepTime}</span>
-                  <span className="font-semibold">{formatPrice(featured.price)}</span>
+                  <span className="text-sm text-[#6b7280]">
+                    {featured.prepTime}
+                  </span>
+                  <span className="font-semibold">
+                    {formatPrice(featured.price)}
+                  </span>
                 </div>
-                <Button asChild variant="outline">
+                <Button asChild size="sm" variant="outline">
                   <Link href="/dashboard/qr">
                     Open QR Export
                     <ArrowRight className="h-4 w-4" />
@@ -145,29 +156,28 @@ export function DashboardOverview() {
 }
 
 function MetricCard({
-  helper,
   icon,
   title,
   value,
 }: {
-  helper: string;
   icon: React.ReactNode;
   title: string;
   value: string;
 }) {
   return (
     <Card>
-      <CardContent className="space-y-4 p-5">
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[#f7f3eb] text-[#0f766e]">
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f7f3eb] text-[#0f766e]">
           {icon}
         </div>
         <div>
-          <p className="text-sm font-medium text-[#6b7280]">{title}</p>
-          <p className="mt-1 text-3xl font-semibold tracking-tight text-[#111827]">
+          <p className="text-xs font-medium tracking-wide text-[#6b7280]">
+            {title}
+          </p>
+          <p className="text-2xl font-semibold tracking-tight text-[#111827]">
             {value}
           </p>
         </div>
-        <p className="text-sm leading-6 text-[#6b7280]">{helper}</p>
       </CardContent>
     </Card>
   );
@@ -175,11 +185,11 @@ function MetricCard({
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-[#ece4d8] bg-[#fffcf8] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
+    <div className="rounded-lg border border-[#ece4d8] bg-[#fffcf8] p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
         {label}
       </p>
-      <p className="mt-2 text-sm leading-6 text-[#374151]">{value}</p>
+      <p className="mt-1 text-sm leading-6 text-[#374151]">{value}</p>
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
+import { API_DASHBOARD_USERS } from "@/lib/api-routes";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +38,7 @@ export function DashboardUsersPage({
     setError("");
     setSuccess("");
 
-    const response = await fetch("/api/dashboard/users", {
+    const response = await fetch(API_DASHBOARD_USERS, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

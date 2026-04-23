@@ -51,6 +51,37 @@ img {
   background: rgba(15, 118, 110, 0.18);
 }
 
+/* Custom scrollbar for sidebar and modal */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(15, 118, 110, 0.15);
+  border-radius: 999px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 118, 110, 0.3);
+}
+
+/* Table hover row effect */
+table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 @media print {
   .no-print {
     display: none !important;
