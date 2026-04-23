@@ -40,6 +40,7 @@ export function PublicRestaurantPage({
   const [activeCategoryId, setActiveCategoryId] = useState("all");
   const [activeItemModalId, setActiveItemModalId] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -92,6 +93,15 @@ export function PublicRestaurantPage({
     };
   }, []);
 
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isTouchMobile =
+      /android|iphone|ipad|ipod/.test(userAgent) || mobileQuery.matches;
+
+    setIsMobileDevice(isTouchMobile);
+  }, []);
+
   if (!initialDataset) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#fcfaf7] px-4 text-center">
@@ -125,7 +135,19 @@ export function PublicRestaurantPage({
   }
 
   function openArViewer(itemId: string) {
+    const item = initialDataset.items.find((entry) => entry.id === itemId);
+
+    if (!item || !hasArAsset(item)) {
+      return;
+    }
+
     setActiveItemModalId("");
+
+    if (isMobileDevice) {
+      openNativeAr(item);
+      return;
+    }
+
     if (!isDesktop) {
       setManualArItemId(itemId);
     }
@@ -135,6 +157,39 @@ export function PublicRestaurantPage({
   function closeArViewer() {
     setManualArItemId("");
     syncItemQuery("");
+  }
+
+  function openNativeAr(item: (typeof initialDataset.items)[number]) {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAppleMobile = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroidMobile = /android/.test(userAgent);
+
+    if (isAppleMobile && item.arModelIosUrl) {
+      window.location.href = item.arModelIosUrl;
+      return;
+    }
+
+    if (isAndroidMobile && item.arModelUrl) {
+      const modelUrl = new URL(item.arModelUrl, window.location.origin).toString();
+      const fallbackUrl = `${window.location.origin}${publicPath}?item=${item.id}`;
+      const intentUrl =
+        `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(modelUrl)}` +
+        `&mode=ar_preferred&title=${encodeURIComponent(item.name)}` +
+        `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;` +
+        `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
+
+      window.location.href = intentUrl;
+      return;
+    }
+
+    if (item.arModelIosUrl) {
+      window.location.href = item.arModelIosUrl;
+      return;
+    }
+
+    if (item.arModelUrl) {
+      window.open(item.arModelUrl, "_blank", "noopener,noreferrer");
+    }
   }
 
   return (
