@@ -38,7 +38,7 @@ export function ArViewerDrawer({
         >
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="mx-auto flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-[#fcfaf7] shadow-[0_32px_80px_-28px_rgba(17,24,39,0.5)]"
+            className="mx-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-[#fcfaf7] shadow-[0_32px_80px_-28px_rgba(17,24,39,0.5)]"
             exit={{ opacity: 0, y: 20 }}
             initial={{ opacity: 0, y: 24 }}
             onClick={(event) => event.stopPropagation()}

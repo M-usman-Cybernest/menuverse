@@ -4,7 +4,6 @@ import {
   Expand,
   Minimize,
   Move3D,
-  ScanEye,
   Pause,
   Play,
   RotateCcw,
@@ -168,11 +167,6 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
               ariaLabel="Reset view"
               icon={<RotateCcw className="h-4 w-4" />}
               onClick={handleResetView}
-            />
-            <IconActionButton
-              ariaLabel="Open AR view"
-              icon={<ScanEye className="h-4 w-4" />}
-              onClick={() => void handleActivateAr()}
             />
           </div>
         </div>

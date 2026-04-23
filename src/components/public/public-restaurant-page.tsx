@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { hasArAsset } from "@/lib/storage";
-import type { RestaurantDataset } from "@/lib/types";
+import type { MenuItem, RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
 
 type PublicRestaurantPageProps = {
@@ -135,7 +135,7 @@ export function PublicRestaurantPage({
   }
 
   function openArViewer(itemId: string) {
-    const item = initialDataset.items.find((entry) => entry.id === itemId);
+    const item = initialDataset!.items.find((entry) => entry.id === itemId);
 
     if (!item || !hasArAsset(item)) {
       return;
@@ -159,7 +159,7 @@ export function PublicRestaurantPage({
     syncItemQuery("");
   }
 
-  function openNativeAr(item: (typeof initialDataset.items)[number]) {
+  function openNativeAr(item: MenuItem) {
     const userAgent = navigator.userAgent.toLowerCase();
     const isAppleMobile = /iphone|ipad|ipod/.test(userAgent);
     const isAndroidMobile = /android/.test(userAgent);
@@ -450,7 +450,7 @@ export function PublicRestaurantPage({
             ? `${activeModalItem.prepTime} - ${formatPrice(activeModalItem.price)}`
             : undefined
         }
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-2xl"
         onClose={() => setActiveItemModalId("")}
         open={Boolean(activeModalItem)}
         title={activeModalItem?.name}
