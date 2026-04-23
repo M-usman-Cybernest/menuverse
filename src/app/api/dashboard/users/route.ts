@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createTeamMember, listTeamMembers } from "@/lib/menuverse-data";
+import { createTeamMember, listTeamMembers } from "@/services/dashboard";
 import { getOptionalSession } from "@/lib/session";
 import { createTeamMemberSchema } from "@/lib/validation";
 

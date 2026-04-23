@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getDashboardBundleForSession,
   saveRestaurantBundle,
-} from "@/lib/menuverse-data";
+} from "@/services/dashboard";
 import { getOptionalSession } from "@/lib/session";
 import { saveRestaurantSchema } from "@/lib/validation";
 

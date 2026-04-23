@@ -36,6 +36,7 @@ type ItemForm = {
   price: number;
   imageUrl: string;
   arModelUrl: string;
+  arModelIosUrl: string;
   categoryId: string;
 };
 
@@ -46,24 +47,23 @@ const EMPTY_ITEM: ItemForm = {
   price: 0,
   imageUrl: "",
   arModelUrl: "",
+  arModelIosUrl: "",
   categoryId: "",
 };
 
 export function DashboardMenuPage() {
   const {
-    addCategory,
-    addItem,
     availableTags,
     categories,
+    deleteCategory,
+    deleteItem,
     items,
-    removeCategory,
-    removeItem,
+    saveCategory,
     saveError,
+    saveItem,
     saveRestaurant,
     saveSuccess,
     saving,
-    updateCategory,
-    updateItem,
     toggleItemTag,
   } = useDashboard();
 
@@ -94,7 +94,7 @@ export function DashboardMenuPage() {
 
   // Upload handler
   const uploadFile = useCallback(
-    async (file: File, type: "image" | "model") => {
+    async (file: File, type: "image" | "model" | "ios-model") => {
       const setter = type === "image" ? setUploading : setUploadingModel;
       setter(true);
 
@@ -119,10 +119,15 @@ export function DashboardMenuPage() {
 
         if (type === "image") {
           setItemForm((previous) => ({ ...previous, imageUrl: result.url }));
-        } else {
+        } else if (type === "model") {
           setItemForm((previous) => ({
             ...previous,
             arModelUrl: result.url,
+          }));
+        } else {
+          setItemForm((previous) => ({
+            ...previous,
+            arModelIosUrl: result.url,
           }));
         }
       } catch {
@@ -149,18 +154,18 @@ export function DashboardMenuPage() {
     setCatModalOpen(true);
   }
 
-  function submitCategory() {
+  async function submitCategory() {
     if (!catForm.name.trim()) return;
 
-    if (editCatId) {
-      updateCategory(editCatId, "name", catForm.name.trim());
-      updateCategory(editCatId, "description", catForm.description.trim());
-    } else {
-      addCategory(catForm.name.trim(), catForm.description.trim());
-    }
+    const success = await saveCategory(editCatId, {
+      name: catForm.name.trim(),
+      description: catForm.description.trim(),
+    });
 
-    setCatModalOpen(false);
-    setCatForm(EMPTY_CATEGORY);
+    if (success) {
+      setCatModalOpen(false);
+      setCatForm(EMPTY_CATEGORY);
+    }
   }
 
   // Item modal handlers
@@ -182,39 +187,31 @@ export function DashboardMenuPage() {
       price: item.price,
       imageUrl: item.imageUrl,
       arModelUrl: item.arModelUrl ?? "",
+      arModelIosUrl: item.arModelIosUrl ?? "",
       categoryId: item.categoryId,
     });
     setEditItemId(itemId);
     setItemModalOpen(true);
   }
 
-  function submitItem() {
+  async function submitItem() {
     if (!itemForm.name.trim() || !itemForm.categoryId) return;
 
-    if (editItemId) {
-      updateItem(editItemId, "name", itemForm.name.trim());
-      updateItem(editItemId, "description", itemForm.description.trim());
-      updateItem(editItemId, "price", itemForm.price);
-      updateItem(editItemId, "categoryId", itemForm.categoryId);
-      if (itemForm.imageUrl)
-        updateItem(editItemId, "imageUrl", itemForm.imageUrl);
-      updateItem(
-        editItemId,
-        "arModelUrl",
-        itemForm.arModelUrl || undefined,
-      );
-    } else {
-      addItem(itemForm.categoryId, {
-        name: itemForm.name.trim(),
-        description: itemForm.description.trim(),
-        price: itemForm.price,
-        imageUrl: itemForm.imageUrl || undefined,
-        arModelUrl: itemForm.arModelUrl || undefined,
-      });
-    }
+    const data = {
+      name: itemForm.name.trim(),
+      description: itemForm.description.trim(),
+      price: itemForm.price,
+      imageUrl: itemForm.imageUrl || undefined,
+      arModelUrl: itemForm.arModelUrl || undefined,
+      arModelIosUrl: itemForm.arModelIosUrl || undefined,
+    };
 
-    setItemModalOpen(false);
-    setItemForm(EMPTY_ITEM);
+    const success = await saveItem(editItemId, data);
+
+    if (success) {
+      setItemModalOpen(false);
+      setItemForm(EMPTY_ITEM);
+    }
   }
 
   function getCategoryName(categoryId: string) {
@@ -285,7 +282,7 @@ export function DashboardMenuPage() {
                   </button>
                   {categories.length > 1 ? (
                     <button
-                      onClick={() => removeCategory(cat.id)}
+                      onClick={() => void deleteCategory(cat.id)}
                       className="rounded p-0.5 text-[#9ca3af] opacity-0 transition hover:text-red-500 group-hover:opacity-100"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -441,7 +438,7 @@ export function DashboardMenuPage() {
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Button
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => void deleteItem(item.id)}
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-red-500 hover:text-red-600"
@@ -670,18 +667,18 @@ export function DashboardMenuPage() {
           </Field>
 
           {/* 3D Model upload */}
-          <Field label="3D / AR Model (.glb, .gltf, .usdz)">
-            <div className="flex items-center gap-4">
-              {itemForm.arModelUrl ? (
-                <Badge variant="accent" className="shrink-0">
-                  <Package className="mr-1 h-3 w-3" />
-                  Model uploaded
-                </Badge>
-              ) : null}
-              <div className="flex-1">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="3D Model (.glb / .gltf)">
+              <div className="flex flex-col gap-2">
+                {itemForm.arModelUrl ? (
+                  <Badge variant="accent" className="w-fit">
+                    <Package className="mr-1 h-3 w-3" />
+                    Android Model
+                  </Badge>
+                ) : null}
                 <input
                   ref={modelInputRef}
-                  accept=".glb,.gltf,.usdz"
+                  accept=".glb,.gltf"
                   className="hidden"
                   type="file"
                   onChange={(event) => {
@@ -694,20 +691,45 @@ export function DashboardMenuPage() {
                   onClick={() => modelInputRef.current?.click()}
                   type="button"
                   disabled={uploadingModel}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-4 py-4 text-sm text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
                 >
-                  {uploadingModel ? (
-                    <span className="animate-pulse">Uploading model...</span>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5" />
-                      <span>Upload 3D model</span>
-                    </>
-                  )}
+                  <Upload className="h-4 w-4" />
+                  <span>Upload .glb</span>
                 </button>
               </div>
-            </div>
-          </Field>
+            </Field>
+
+            <Field label="iOS Model (.usdz)">
+              <div className="flex flex-col gap-2">
+                {itemForm.arModelIosUrl ? (
+                  <Badge variant="accent" className="w-fit">
+                    <Package className="mr-1 h-3 w-3" />
+                    iOS Model
+                  </Badge>
+                ) : null}
+                <input
+                  id="ios-model-input"
+                  accept=".usdz"
+                  className="hidden"
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) void uploadFile(file, "ios-model");
+                    event.target.value = "";
+                  }}
+                />
+                <button
+                  onClick={() => document.getElementById("ios-model-input")?.click()}
+                  type="button"
+                  disabled={uploadingModel}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Upload .usdz</span>
+                </button>
+              </div>
+            </Field>
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button

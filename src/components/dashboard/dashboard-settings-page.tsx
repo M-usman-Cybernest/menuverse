@@ -1,24 +1,5 @@
 "use client";
-
-import {
-  Bell,
-  Building2,
-  Clock,
-  Globe,
-  ImagePlus,
-  Key,
-  MapPin,
-  Moon,
-  Palette,
-  Plus,
-  Save,
-  Search,
-  Shield,
-  Store,
-  Sun,
-  Trash2,
-  User,
-} from "lucide-react";
+import { Building2, Clock, Globe, ImagePlus, Key, MapPin, Moon, Palette, Plus, Save, Search, Shield, Store, Sun, Trash2, User, } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
@@ -63,13 +44,14 @@ export function DashboardSettingsPage() {
   const {
     bundle,
     restaurant,
-    addBranch,
-    removeBranch,
-    updateBranch,
+    saveBranches,
     saveError,
+    saveHours,
+    saveProfile,
     saveRestaurant,
     saveSuccess,
     saving,
+    updateBranch,
     updateRestaurantField,
     updateTiming,
   } = useDashboard();
@@ -108,32 +90,22 @@ export function DashboardSettingsPage() {
     [updateRestaurantField],
   );
 
-  function submitBranch() {
-    if (!branchForm.name.trim()) return;
-    addBranch();
-    // The last branch added will be the new one, update its fields
-    if (restaurant) {
-      const branches = restaurant.branches;
-      const lastBranch = branches[branches.length - 1];
-      if (lastBranch) {
-        updateBranch(lastBranch.id, "name", branchForm.name.trim());
-        updateBranch(lastBranch.id, "address", branchForm.address.trim());
-        updateBranch(lastBranch.id, "city", branchForm.city.trim());
-        updateBranch(
-          lastBranch.id,
-          "directionsLabel",
-          branchForm.directionsLabel.trim(),
-        );
-        updateBranch(lastBranch.id, "tableCount", branchForm.tableCount);
-        updateBranch(
-          lastBranch.id,
-          "mapsUrl",
-          branchForm.mapsUrl || "https://maps.google.com",
-        );
-      }
+  async function submitBranch() {
+    if (!branchForm.name.trim() || !restaurant) return;
+    const newBranch = {
+      id: Math.random().toString(36).slice(2, 9),
+      ...branchForm,
+    };
+    const success = await saveBranches([...restaurant.branches, newBranch]);
+    if (success) {
+      setBranchModalOpen(false);
+      setBranchForm(EMPTY_BRANCH);
     }
-    setBranchModalOpen(false);
-    setBranchForm(EMPTY_BRANCH);
+  }
+
+  async function handleRemoveBranch(branchId: string) {
+    if (!restaurant) return;
+    await saveBranches(restaurant.branches.filter((b) => b.id !== branchId));
   }
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -154,9 +126,17 @@ export function DashboardSettingsPage() {
             Restaurant Configuration
           </h2>
         </div>
-        <Button onClick={() => void saveRestaurant()} disabled={saving}>
+        <Button
+          onClick={() => {
+            if (activeTab === "restaurant") saveProfile(restaurant);
+            else if (activeTab === "hours") saveHours(restaurant.timings);
+            else if (activeTab === "branches") saveBranches(restaurant.branches);
+            else saveRestaurant();
+          }}
+          disabled={saving}
+        >
           <Save className="h-4 w-4" />
-          {saving ? "Saving..." : "Save All"}
+          {saving ? "Saving..." : `Save ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
         </Button>
       </div>
 
@@ -173,11 +153,10 @@ export function DashboardSettingsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition ${
-              activeTab === tab.id
-                ? "bg-[#0f766e] text-white shadow-sm"
-                : "text-[#6b7280] hover:bg-[#efe8dc] hover:text-[#111827]"
-            }`}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === tab.id
+              ? "bg-[#0f766e] text-white shadow-sm"
+              : "text-[#6b7280] hover:bg-[#efe8dc] hover:text-[#111827]"
+              }`}
           >
             {tab.icon}
             {tab.label}
@@ -375,14 +354,12 @@ export function DashboardSettingsPage() {
                         updateTiming(timing.day, "closed", !timing.closed)
                       }
                       type="button"
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                        !timing.closed ? "bg-[#0f766e]" : "bg-[#d9cdbb]"
-                      }`}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${!timing.closed ? "bg-[#0f766e]" : "bg-[#d9cdbb]"
+                        }`}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                          !timing.closed ? "translate-x-5" : "translate-x-0"
-                        }`}
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${!timing.closed ? "translate-x-5" : "translate-x-0"
+                          }`}
                       />
                     </button>
                   </div>
@@ -489,7 +466,7 @@ export function DashboardSettingsPage() {
                           </td>
                           <td className="px-5 py-3 text-right">
                             <Button
-                              onClick={() => removeBranch(branch.id)}
+                              onClick={() => void handleRemoveBranch(branch.id)}
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-red-500 hover:text-red-600"
@@ -520,9 +497,7 @@ export function DashboardSettingsPage() {
                 <Field label="Branch Name">
                   <Input
                     value={branch.name}
-                    onChange={(e) =>
-                      updateBranch(branch.id, "name", e.target.value)
-                    }
+                    onChange={(e) => updateBranch(branch.id, "name", e.target.value)}
                   />
                 </Field>
                 <Field label="Table Count">
@@ -549,9 +524,7 @@ export function DashboardSettingsPage() {
                 <Field label="City">
                   <Input
                     value={branch.city}
-                    onChange={(e) =>
-                      updateBranch(branch.id, "city", e.target.value)
-                    }
+                    onChange={(e) => updateBranch(branch.id, "city", e.target.value)}
                   />
                 </Field>
                 <div className="md:col-span-2">
@@ -561,16 +534,22 @@ export function DashboardSettingsPage() {
                   <MapPicker
                     locationLabel={branch.address}
                     value={branch.mapsUrl}
-                    onLabelChange={(label) =>
-                      updateBranch(branch.id, "address", label)
-                    }
-                    onLocationChange={(url) =>
-                      updateBranch(branch.id, "mapsUrl", url)
-                    }
+                    onLabelChange={(label) => updateBranch(branch.id, "address", label)}
+                    onLocationChange={(url) => updateBranch(branch.id, "mapsUrl", url)}
                     height={160}
                   />
                 </div>
               </CardContent>
+              <CardHeader className="pt-0">
+                <Button
+                  onClick={() => saveBranches(restaurant.branches)}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  Save Branch Changes
+                </Button>
+              </CardHeader>
             </Card>
           ))}
 
@@ -701,15 +680,34 @@ export function DashboardSettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Field label="Current Password">
-                <Input type="password" placeholder="••••••••" />
+                <Input id="current-password" type="password" placeholder="••••••••" />
               </Field>
               <Field label="New Password">
-                <Input type="password" placeholder="••••••••" />
+                <Input id="new-password" type="password" placeholder="••••••••" />
               </Field>
               <Field label="Confirm Password">
-                <Input type="password" placeholder="••••••••" />
+                <Input id="confirm-password" type="password" placeholder="••••••••" />
               </Field>
-              <Button variant="secondary" className="w-full">
+              <Button
+                onClick={async () => {
+                  const current = (document.getElementById("current-password") as HTMLInputElement).value;
+                  const newPass = (document.getElementById("new-password") as HTMLInputElement).value;
+                  const confirm = (document.getElementById("confirm-password") as HTMLInputElement).value;
+                  if (newPass !== confirm) {
+                    alert("Passwords do not match");
+                    return;
+                  }
+                  const res = await fetch("/api/dashboard/account/password", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ currentPassword: current, newPassword: newPass }),
+                  });
+                  if (res.ok) alert("Password updated");
+                  else alert("Failed to update password");
+                }}
+                variant="secondary"
+                className="w-full"
+              >
                 <Key className="h-4 w-4" />
                 Update Password
               </Button>
