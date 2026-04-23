@@ -1,7 +1,5 @@
 import { connectToDatabase } from "@/lib/mongoose";
 import { RestaurantModel } from "@/lib/models/restaurant";
-import { MenuCategoryModel } from "@/lib/models/menu-category";
-import { MenuItemModel } from "@/lib/models/menu-item";
 import { isDatabaseConfigured, env } from "@/lib/env";
 import { getPublicRestaurantPath } from "@/lib/utils";
 import type {
@@ -15,6 +13,7 @@ import {
   getCategoriesForRestaurant,
   getItemsForRestaurant,
   ensureSeeded,
+  type DbRestaurantRecord,
 } from "./dashboard/data-utils";
 import { serializeUser } from "./dashboard/bundle-service";
 
@@ -23,7 +22,7 @@ export async function findRestaurantBySlug(slug: string) {
 
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    const record = await RestaurantModel.findOne({ slug }).lean<any>();
+    const record = await RestaurantModel.findOne({ slug }).lean<DbRestaurantRecord>();
     if (!record) return null;
     return {
       id: record.appId,

@@ -21,6 +21,11 @@ type ItemInitial = Partial<
   >
 >;
 
+type ApiError = { message: string };
+type BundleResponse = { bundle: DashboardBundle };
+type CategoriesResponse = { categories: MenuCategory[] };
+type ItemsResponse = { items: MenuItem[] };
+
 type DashboardContextValue = {
   availableTags: readonly DietaryTag[];
   bundle: DashboardBundle;
@@ -70,7 +75,7 @@ type DashboardContextValue = {
   saveBranches: (branches: Branch[]) => Promise<boolean>;
   saveCategory: (id: string | null, data: { name: string; description: string }) => Promise<boolean>;
   deleteCategory: (id: string) => Promise<boolean>;
-  saveItem: (id: string | null, data: any) => Promise<boolean>;
+  saveItem: (id: string | null, data: Partial<MenuItem>) => Promise<boolean>;
   deleteItem: (id: string) => Promise<boolean>;
 };
 
@@ -145,6 +150,10 @@ function createDefaultRestaurantBundle(bundle: DashboardBundle): DashboardBundle
 
 function sortCategories(categories: MenuCategory[]) {
   return [...categories].sort((left, right) => left.order - right.order);
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function DashboardProvider({
@@ -504,14 +513,16 @@ export function DashboardProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...bundle, restaurant: { ...bundle.restaurant, ...data } }),
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message || "Failed to save profile");
+      const payload = (await response.json()) as BundleResponse | ApiError;
+      if (!response.ok || !("bundle" in payload)) {
+        throw new Error("message" in payload ? payload.message : "Failed to save profile");
+      }
       setBundle(payload.bundle);
       setSaveSuccess("Profile updated");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to save profile"));
       return false;
     } finally {
       setSaving(false);
@@ -534,8 +545,8 @@ export function DashboardProvider({
       setSaveSuccess("Hours updated");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to save hours"));
       return false;
     } finally {
       setSaving(false);
@@ -558,8 +569,8 @@ export function DashboardProvider({
       setSaveSuccess("Branches updated");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to save branches"));
       return false;
     } finally {
       setSaving(false);
@@ -576,14 +587,16 @@ export function DashboardProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to save category");
-      setBundle((curr) => ({ ...curr, categories: resData.categories }));
+      const payload = (await response.json()) as CategoriesResponse | ApiError;
+      if (!response.ok || !("categories" in payload)) {
+        throw new Error("message" in payload ? payload.message : "Failed to save category");
+      }
+      setBundle((curr) => ({ ...curr, categories: payload.categories }));
       setSaveSuccess(id ? "Category updated" : "Category added");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to save category"));
       return false;
     } finally {
       setSaving(false);
@@ -594,25 +607,27 @@ export function DashboardProvider({
     setSaving(true);
     try {
       const response = await fetch(`/api/dashboard/categories/${id}`, { method: "DELETE" });
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to delete category");
+      const payload = (await response.json()) as CategoriesResponse | ApiError;
+      if (!response.ok || !("categories" in payload)) {
+        throw new Error("message" in payload ? payload.message : "Failed to delete category");
+      }
       setBundle((curr) => ({
         ...curr,
-        categories: resData.categories,
+        categories: payload.categories,
         items: curr.items.filter((i) => i.categoryId !== id),
       }));
       setSaveSuccess("Category removed");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to delete category"));
       return false;
     } finally {
       setSaving(false);
     }
   }
 
-  async function saveItem(id: string | null, data: any) {
+  async function saveItem(id: string | null, data: Partial<MenuItem>) {
     setSaving(true);
     try {
       const url = id ? `/api/dashboard/items/${id}` : "/api/dashboard/items";
@@ -622,14 +637,16 @@ export function DashboardProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to save item");
-      setBundle((curr) => ({ ...curr, items: resData.items }));
+      const payload = (await response.json()) as ItemsResponse | ApiError;
+      if (!response.ok || !("items" in payload)) {
+        throw new Error("message" in payload ? payload.message : "Failed to save item");
+      }
+      setBundle((curr) => ({ ...curr, items: payload.items }));
       setSaveSuccess(id ? "Item updated" : "Item added");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to save item"));
       return false;
     } finally {
       setSaving(false);
@@ -640,14 +657,16 @@ export function DashboardProvider({
     setSaving(true);
     try {
       const response = await fetch(`/api/dashboard/items/${id}`, { method: "DELETE" });
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to delete item");
-      setBundle((curr) => ({ ...curr, items: resData.items }));
+      const payload = (await response.json()) as ItemsResponse | ApiError;
+      if (!response.ok || !("items" in payload)) {
+        throw new Error("message" in payload ? payload.message : "Failed to delete item");
+      }
+      setBundle((curr) => ({ ...curr, items: payload.items }));
       setSaveSuccess("Item removed");
       setTimeout(() => setSaveSuccess(""), 2000);
       return true;
-    } catch (err: any) {
-      setSaveError(err.message);
+    } catch (error) {
+      setSaveError(getErrorMessage(error, "Failed to delete item"));
       return false;
     } finally {
       setSaving(false);

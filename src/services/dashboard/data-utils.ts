@@ -6,17 +6,13 @@ import { RestaurantModel } from "@/lib/models/restaurant";
 import { UserModel } from "@/lib/models/user";
 import { connectToDatabase } from "@/lib/mongoose";
 import type {
-  AuthSession,
-  DashboardBundle,
   MenuCategory,
   MenuItem,
-  RestaurantDataset,
   RestaurantProfile,
-  TeamMember,
   TenantUser,
   UserRole,
 } from "@/lib/types";
-import { createId, slugify } from "@/lib/utils";
+import { createId } from "@/lib/utils";
 
 export type StoredUserRecord = TenantUser & {
   passwordHash: string;
@@ -97,12 +93,18 @@ export async function ensureSeeded() {
           });
 
           for (const item of demo.items.filter((i) => i.categoryId === cat.id)) {
-            const {
-              id: _itemId,
-              restaurantId: _restaurantId,
-              categoryId: _categoryId,
-              ...itemData
-            } = item;
+            const itemData = {
+              name: item.name,
+              description: item.description,
+              price: item.price,
+              imageUrl: item.imageUrl,
+              arModelUrl: item.arModelUrl,
+              arModelIosUrl: item.arModelIosUrl,
+              qrCodeUrl: item.qrCodeUrl,
+              dietaryTags: item.dietaryTags,
+              prepTime: item.prepTime,
+              featured: item.featured,
+            };
             await MenuItemModel.create({
               appId: createId("item"),
               restaurantId,

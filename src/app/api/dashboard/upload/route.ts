@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       ".usdz",
     ];
 
-    if (!allowedExtensions.includes(ext)) {
+    if (!allowedExtensions.includes(ext) || (file.type && !ALL_ALLOWED_TYPES.includes(file.type))) {
       return NextResponse.json(
         {
           message: `File type not allowed. Allowed types: ${allowedExtensions.join(", ")}`,

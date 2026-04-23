@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/lib/mongoose";
 import { UserModel } from "@/lib/models/user";
 import { isDatabaseConfigured } from "@/lib/env";
 import { verifyPassword } from "@/lib/auth";
+import type { DbUserRecord, StoredUserRecord } from "./dashboard/data-utils";
 import {
   getMemoryState,
   ensureSeeded,
@@ -13,7 +14,7 @@ export async function findUserByEmail(email: string) {
 
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<any>();
+    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<DbUserRecord>();
     if (!record) return null;
     return {
       id: record.appId,
@@ -36,5 +37,5 @@ export async function validateCredentials(email: string, password: string) {
   const isValid = await verifyPassword(password, user.passwordHash);
   if (!isValid) return null;
 
-  return serializeUser(user as any);
+  return serializeUser(user as StoredUserRecord);
 }

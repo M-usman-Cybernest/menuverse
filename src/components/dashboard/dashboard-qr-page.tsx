@@ -48,9 +48,9 @@ export function DashboardQrPage() {
     if (!publicUrl || !restaurant) return;
 
     let active = true;
-    setGenerating(true);
+    const generateCodes = async () => {
+      setGenerating(true);
 
-    (async () => {
       // Global QR
       const globalDataUrl = await generateQr(publicUrl);
       if (!active) return;
@@ -72,7 +72,9 @@ export function DashboardQrPage() {
 
       setItemQrs(itemResults);
       setGenerating(false);
-    })();
+    };
+
+    void generateCodes();
 
     return () => {
       active = false;

@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/mongoose";
 import { MenuItemModel } from "@/lib/models/menu-item";
 import { isDatabaseConfigured } from "@/lib/env";
 import { createId } from "@/lib/utils";
-import type { AuthSession, DietaryTag } from "@/lib/types";
+import type { AuthSession, DietaryTag, MenuItem } from "@/lib/types";
 import {
   findUserById,
   findFirstRestaurant,
@@ -75,7 +75,7 @@ export async function createItem(
 export async function updateItemById(
   currentSession: AuthSession,
   itemId: string,
-  input: any,
+  input: Partial<MenuItem>,
 ) {
   const currentUser = await findUserById(currentSession.userId);
   if (!currentUser) throw new Error("User not found.");

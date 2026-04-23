@@ -82,20 +82,24 @@ export async function saveRestaurantBundle(
 ): Promise<DashboardBundle> {
   const user = await findUserById(currentSession.userId);
   if (!user) throw new Error("User not found.");
+  if (payload.categories.length === 0) {
+    throw new Error("At least one category is required.");
+  }
 
   // For simplicity, we assume the restaurant ID in payload is the one owned by user
   const restaurantId = payload.restaurant.id;
-  const categories = payload.categories.map((c, i) => ({
+  const categories: MenuCategory[] = payload.categories.map((c, i) => ({
     ...c,
     id: c.id || createId("category"),
     restaurantId,
     order: i,
   }));
-  const items = payload.items.map((it) => ({
+  const fallbackCategoryId = categories[0].id;
+  const items: MenuItem[] = payload.items.map((it) => ({
     ...it,
     id: it.id || createId("item"),
     restaurantId,
-    categoryId: categories.find((c) => c.id === it.categoryId)?.id || categories[0]?.id,
+    categoryId: categories.find((c) => c.id === it.categoryId)?.id || fallbackCategoryId,
   }));
 
   if (isDatabaseConfigured()) {
@@ -128,8 +132,8 @@ export async function saveRestaurantBundle(
     const state = getMemoryState();
     state.restaurants = state.restaurants.map(r => r.id === restaurantId ? payload.restaurant : r);
     state.categories = state.categories.filter(c => c.restaurantId !== restaurantId).concat(categories);
-    state.items = state.items.filter(it => it.restaurantId !== restaurantId).concat(items as any);
+    state.items = state.items.filter(it => it.restaurantId !== restaurantId).concat(items);
   }
 
-  return buildDashboardBundle(serializeUser(user), payload.restaurant, categories, items as any);
+  return buildDashboardBundle(serializeUser(user), payload.restaurant, categories, items);
 }

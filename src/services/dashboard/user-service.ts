@@ -1,3 +1,4 @@
+import { cloneDemoDataset } from "@/data/menuverse-demo";
 import { connectToDatabase } from "@/lib/mongoose";
 import { UserModel } from "@/lib/models/user";
 import { RestaurantModel } from "@/lib/models/restaurant";
@@ -5,14 +6,20 @@ import { MenuCategoryModel } from "@/lib/models/menu-category";
 import { MenuItemModel } from "@/lib/models/menu-item";
 import { isDatabaseConfigured } from "@/lib/env";
 import { hashPassword, verifyPassword } from "@/lib/auth";
-import type { AuthSession } from "@/lib/types";
+import type {
+  AuthSession,
+  MenuCategory,
+  MenuItem,
+  RestaurantDataset,
+  RestaurantProfile,
+  UserRole,
+} from "@/lib/types";
 import { createId, slugify } from "@/lib/utils";
 import {
   findUserById,
-  findFirstRestaurant,
-  findRestaurantByOwnerId,
   getMemoryState,
   DbUserRecord,
+  type StoredUserRecord,
 } from "./data-utils";
 import { serializeUser } from "./bundle-service";
 
@@ -105,7 +112,9 @@ export async function listTeamMembers(currentSession: AuthSession) {
       ? await UserModel.find({}).sort({ createdAt: 1 }).lean<DbUserRecord[]>()
       : await UserModel.find({ appId: currentSession.userId }).lean<DbUserRecord[]>();
     
-    const restaurants = await RestaurantModel.find({}).select("appId ownerId").lean<any[]>();
+    const restaurants = await RestaurantModel.find({})
+      .select("appId ownerId")
+      .lean<Array<{ appId: string; ownerId: string }>>();
 
     return users.map((user) => ({
       id: user.appId,
@@ -131,7 +140,13 @@ export async function listTeamMembers(currentSession: AuthSession) {
 
 export async function createTeamMember(
   currentSession: AuthSession,
-  input: { name: string; email: string; password: string; role: any; restaurantName?: string }
+  input: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    restaurantName?: string;
+  },
 ) {
   if (currentSession.role !== "admin") throw new Error("Permission denied.");
 
@@ -160,11 +175,18 @@ export async function createTeamMember(
       role: input.role,
       subscriptionStatus: "trial",
     });
-    return serializeUser({ ...user.toObject(), id: user.appId });
+    return serializeUser({
+      id: user.appId,
+      name: user.name,
+      email: user.email,
+      passwordHash: user.passwordHash,
+      role: user.role,
+      subscriptionStatus: user.subscriptionStatus,
+    } satisfies StoredUserRecord);
   }
 
   const state = getMemoryState();
-  const user: any = {
+  const user = {
     id: userId,
     name: input.name,
     email: input.email.toLowerCase(),
@@ -172,12 +194,17 @@ export async function createTeamMember(
     role: input.role,
     subscriptionStatus: "trial",
     createdAt: new Date().toISOString(),
-  };
+  } satisfies StoredUserRecord;
   state.users.push(user);
   return serializeUser(user);
 }
 
-export async function registerOwner(input: any) {
+export async function registerOwner(input: {
+  name: string;
+  email: string;
+  password: string;
+  restaurantName: string;
+}) {
   const passwordHash = await hashPassword(input.password);
   const userId = createId("user");
   const restaurantId = createId("restaurant");
@@ -193,40 +220,76 @@ export async function registerOwner(input: any) {
       subscriptionStatus: "trial",
     });
 
-    const existingRestaurants = await RestaurantModel.find({}).select("slug appId").lean<any[]>();
+    const existingRestaurants = await RestaurantModel.find({})
+      .select("slug appId")
+      .lean<Array<Pick<RestaurantProfile, "slug"> & { appId: string }>>();
     const slug = ensureUniqueSlug(slugify(input.restaurantName), existingRestaurants);
     
-    const dataset = buildStarterDataset(serializeUser({ ...ownerRecord.toObject(), id: ownerRecord.appId }), input.restaurantName);
+    const dataset = buildStarterDataset(input.restaurantName);
     dataset.restaurant.id = restaurantId;
     dataset.restaurant.slug = slug;
     dataset.restaurant.ownerId = userId;
+    const restaurantData = {
+      name: dataset.restaurant.name,
+      slug: dataset.restaurant.slug,
+      logoUrl: dataset.restaurant.logoUrl,
+      coverImageUrl: dataset.restaurant.coverImageUrl,
+      description: dataset.restaurant.description,
+      heroNote: dataset.restaurant.heroNote,
+      cuisineLabel: dataset.restaurant.cuisineLabel,
+      locationLabel: dataset.restaurant.locationLabel,
+      locationMapsUrl: dataset.restaurant.locationMapsUrl,
+      supportEmail: dataset.restaurant.supportEmail,
+      isPublished: dataset.restaurant.isPublished,
+      timings: dataset.restaurant.timings,
+      branches: dataset.restaurant.branches,
+    };
 
     await RestaurantModel.create({
       appId: restaurantId,
       ownerId: userId,
-      ...dataset.restaurant,
+      ...restaurantData,
     });
 
     await MenuCategoryModel.insertMany(
-      dataset.categories.map(({ id, restaurantId: _restaurantId, ...category }) => ({
-        appId: id,
-        restaurantId,
-        ...category,
-      })),
+      dataset.categories.map((category: MenuCategory) => ({
+          appId: category.id,
+          restaurantId,
+          name: category.name,
+          order: category.order,
+          description: category.description,
+        })),
     );
     await MenuItemModel.insertMany(
-      dataset.items.map(({ id, restaurantId: _restaurantId, ...item }) => ({
-        appId: id,
+      dataset.items.map((item: MenuItem) => ({
+        appId: item.id,
         restaurantId,
-        ...item,
+        categoryId: item.categoryId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        imageUrl: item.imageUrl,
+        arModelUrl: item.arModelUrl,
+        arModelIosUrl: item.arModelIosUrl,
+        qrCodeUrl: item.qrCodeUrl,
+        dietaryTags: item.dietaryTags,
+        prepTime: item.prepTime,
+        featured: item.featured,
       })),
     );
 
-    return serializeUser({ ...ownerRecord.toObject(), id: ownerRecord.appId });
+    return serializeUser({
+      id: ownerRecord.appId,
+      name: ownerRecord.name,
+      email: ownerRecord.email,
+      passwordHash: ownerRecord.passwordHash,
+      role: ownerRecord.role,
+      subscriptionStatus: ownerRecord.subscriptionStatus,
+    } satisfies StoredUserRecord);
   }
 
   const state = getMemoryState();
-  const ownerRecord: any = {
+  const ownerRecord = {
     id: userId,
     name: input.name,
     email: input.email.toLowerCase(),
@@ -234,10 +297,10 @@ export async function registerOwner(input: any) {
     role: "owner",
     subscriptionStatus: "trial",
     createdAt: new Date().toISOString(),
-  };
+  } satisfies StoredUserRecord;
 
   const slug = ensureUniqueSlug(slugify(input.restaurantName), state.restaurants);
-  const dataset = buildStarterDataset(serializeUser(ownerRecord), input.restaurantName);
+  const dataset = buildStarterDataset(input.restaurantName);
   dataset.restaurant.id = restaurantId;
   dataset.restaurant.slug = slug;
   dataset.restaurant.ownerId = userId;
@@ -245,10 +308,10 @@ export async function registerOwner(input: any) {
   state.users.push(ownerRecord);
   state.restaurants.push(dataset.restaurant);
   state.categories.push(
-    ...dataset.categories.map((category) => ({ ...category, restaurantId })),
+    ...dataset.categories.map((category: MenuCategory) => ({ ...category, restaurantId })),
   );
   state.items.push(
-    ...dataset.items.map((item) => ({ ...item, restaurantId })),
+    ...dataset.items.map((item: MenuItem) => ({ ...item, restaurantId })),
   );
 
   return serializeUser(ownerRecord);
@@ -257,24 +320,35 @@ export async function registerOwner(input: any) {
 async function findUserByEmail(email: string) {
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<any>();
-    return record;
+    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<DbUserRecord>();
+    if (!record) {
+      return null;
+    }
+
+    return {
+      id: record.appId,
+      name: record.name,
+      email: record.email,
+      passwordHash: record.passwordHash,
+      role: record.role,
+      subscriptionStatus: record.subscriptionStatus,
+      createdAt: record.createdAt?.toISOString(),
+    } satisfies StoredUserRecord;
   }
   const state = getMemoryState();
-  return state.users.find(u => u.email === email.toLowerCase());
+  return state.users.find((u) => u.email === email.toLowerCase()) ?? null;
 }
 
-function ensureUniqueSlug(base: string, existing: any[]) {
+function ensureUniqueSlug(base: string, existing: Array<{ slug: string }>) {
   let slug = base || "restaurant";
   let counter = 1;
-  while (existing.some((r: any) => r.slug === slug)) {
+  while (existing.some((restaurant) => restaurant.slug === slug)) {
     slug = `${base}-${counter++}`;
   }
   return slug;
 }
 
-function buildStarterDataset(owner: any, name: string) {
-  const { cloneDemoDataset } = require("@/data/menuverse-demo");
+function buildStarterDataset(name: string): RestaurantDataset {
   const demo = cloneDemoDataset();
   return {
     ...demo,

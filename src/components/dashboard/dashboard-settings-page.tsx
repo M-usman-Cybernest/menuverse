@@ -1,5 +1,5 @@
 "use client";
-import { Building2, Clock, Globe, ImagePlus, Key, MapPin, Moon, Palette, Plus, Save, Search, Shield, Store, Sun, Trash2, User, } from "lucide-react";
+import { Building2, Clock, ImagePlus, Key, Plus, Save, Shield, Store, Trash2, User } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
@@ -481,7 +481,7 @@ export function DashboardSettingsPage() {
                 </div>
               ) : (
                 <div className="mx-5 mb-5 rounded-lg border border-dashed border-[#d9cdbb] bg-[#fffcf8] p-6 text-center text-sm text-[#6b7280]">
-                  No branches yet. Click "Add Branch" to create one.
+                  No branches yet. Click &quot;Add Branch&quot; to create one.
                 </div>
               )}
             </CardContent>

@@ -29,7 +29,9 @@ export function MapPicker({
     isDefaultLabel ? "" : locationLabel,
   );
   const [activeQuery, setActiveQuery] = useState(
-    isDefaultLabel ? "" : locationLabel,
+    isDefaultLabel
+      ? decodeURIComponent(value.replace(/^https:\/\/www\.google\.com\/maps\/search\//, ""))
+      : locationLabel,
   );
 
   const handleSearch = useCallback(() => {
