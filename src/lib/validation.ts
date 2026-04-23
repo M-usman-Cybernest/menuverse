@@ -115,3 +115,7 @@ export const externalAssetSchema = z.object({
   target: z.enum(ITEM_ASSET_TARGETS),
   url: z.string().trim().min(1),
 });
+
+export const googleDriveFileQuerySchema = z.object({
+  target: z.enum(ITEM_ASSET_TARGETS),
+});

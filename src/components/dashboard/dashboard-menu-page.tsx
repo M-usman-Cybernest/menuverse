@@ -6,6 +6,7 @@ import {
   Package,
   Pencil,
   Plus,
+  RefreshCw,
   Save,
   Trash2,
   Upload,
@@ -14,9 +15,12 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
-import { API_DASHBOARD_UPLOAD, API_GOOGLE_CALLBACK } from "@/lib/api-routes";
-import type { ExternalStorageProvider, ItemAssetTarget } from "@/lib/storage";
-import { hasArAsset } from "@/lib/storage";
+import {
+  API_DASHBOARD_UPLOAD,
+  API_GOOGLE_AUTH,
+  API_GOOGLE_CALLBACK,
+  API_GOOGLE_FILES,
+} from "@/lib/api-routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +33,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
+import type { ExternalStorageProvider, ItemAssetTarget } from "@/lib/storage";
+import { hasArAsset } from "@/lib/storage";
 import { formatPrice } from "@/lib/utils";
 
 type CategoryForm = { name: string; description: string };
@@ -40,6 +46,19 @@ type ItemForm = {
   arModelUrl: string;
   arModelIosUrl: string;
   categoryId: string;
+};
+
+type UploadMode = "local" | "google-drive";
+type UploadKind = "image" | "model" | "ios-model";
+type GoogleDriveAsset = {
+  createdTime?: string;
+  id: string;
+  mimeType: string;
+  name: string;
+  previewUrl: string;
+  target: ItemAssetTarget;
+  thumbnailUrl: string | null;
+  url: string;
 };
 
 const EMPTY_CATEGORY: CategoryForm = { name: "", description: "" };
@@ -78,7 +97,6 @@ export function DashboardMenuPage() {
     toggleItemTag,
   } = useDashboard();
 
-  // Modal states
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [catForm, setCatForm] = useState<CategoryForm>(EMPTY_CATEGORY);
   const [editCatId, setEditCatId] = useState<string | null>(null);
@@ -86,6 +104,7 @@ export function DashboardMenuPage() {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
   const [editItemId, setEditItemId] = useState<string | null>(null);
+
   const [storageModalOpen, setStorageModalOpen] = useState(false);
   const [storageTarget, setStorageTarget] = useState<ItemAssetTarget>("imageUrl");
   const [storageProvider, setStorageProvider] =
@@ -93,109 +112,239 @@ export function DashboardMenuPage() {
   const [storageUrl, setStorageUrl] = useState("");
   const [storageError, setStorageError] = useState("");
 
+  const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
+  const [driveAssets, setDriveAssets] = useState<GoogleDriveAsset[]>([]);
+  const [driveError, setDriveError] = useState("");
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveNeedsAuth, setDriveNeedsAuth] = useState(false);
+  const [connectingDrive, setConnectingDrive] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
+  const iosModelInputRef = useRef<HTMLInputElement>(null);
+  const imageUploadModeRef = useRef<UploadMode>("local");
+  const modelUploadModeRef = useRef<UploadMode>("local");
+  const iosUploadModeRef = useRef<UploadMode>("local");
 
-  // Filter state for table
   const [filterCategoryId, setFilterCategoryId] = useState<string>("all");
-
-  // Tag editor panel
   const [tagEditorItemId, setTagEditorItemId] = useState<string | null>(null);
 
-  useEffect(() => {
-    function handleExternalAssetMessage(event: MessageEvent) {
-      if (
-        !event.data ||
-        typeof event.data !== "object" ||
-        event.data.type !== "menuverse-external-asset"
-      ) {
-        return;
-      }
-
-      const asset = event.data.asset as
-        | { target?: ItemAssetTarget; url?: string }
-        | undefined;
-
-      if (!asset?.target || !asset?.url) {
-        return;
-      }
-
-      const target = asset.target as keyof ItemForm;
-
+  const applyAssetToItem = useCallback(
+    (asset: { target: ItemAssetTarget; url: string }) => {
       setItemForm((previous) => ({
         ...previous,
-        [target]: asset.url,
+        [asset.target]: asset.url,
       }));
-      setStorageModalOpen(false);
-      setStorageUrl("");
+    },
+    [],
+  );
+
+  const loadGoogleDriveAssets = useCallback(
+    async (target: ItemAssetTarget) => {
+      setDriveLoading(true);
+      setDriveError("");
       setStorageError("");
+
+      try {
+        const response = await fetch(
+          `${API_GOOGLE_FILES}?target=${encodeURIComponent(target)}`,
+        );
+        const payload = (await response.json()) as
+          | { assets: GoogleDriveAsset[] }
+          | { message?: string; needsAuth?: boolean };
+
+        if (!response.ok || !("assets" in payload)) {
+          if ("needsAuth" in payload && payload.needsAuth) {
+            setDriveNeedsAuth(true);
+          }
+
+          throw new Error(
+            "message" in payload && payload.message
+              ? payload.message
+              : "Could not read Google Drive files.",
+          );
+        }
+
+        setDriveAssets(payload.assets);
+        setDriveNeedsAuth(false);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Could not read Google Drive files.";
+        setDriveAssets([]);
+        setDriveError(message);
+        setStorageError(message);
+      } finally {
+        setDriveLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    function handleWindowMessage(event: MessageEvent) {
+      if (!event.data || typeof event.data !== "object") {
+        return;
+      }
+
+      if (event.data.type === "menuverse-external-asset") {
+        const asset = event.data.asset as
+          | { target?: ItemAssetTarget; url?: string }
+          | undefined;
+
+        if (!asset?.target || !asset?.url) {
+          return;
+        }
+
+        applyAssetToItem({
+          target: asset.target,
+          url: asset.url,
+        });
+        setStorageModalOpen(false);
+        setStorageUrl("");
+        setStorageError("");
+        return;
+      }
+
+      if (event.data.type === "menuverse-google-drive-auth") {
+        setConnectingDrive(false);
+
+        if (event.data.ok) {
+          setDriveNeedsAuth(false);
+          setDriveError("");
+          setStorageError("");
+
+          if (driveBrowserOpen) {
+            void loadGoogleDriveAssets(storageTarget);
+          }
+          return;
+        }
+
+        const message =
+          typeof event.data.message === "string"
+            ? event.data.message
+            : "Google Drive could not be connected.";
+        setDriveNeedsAuth(true);
+        setDriveError(message);
+        setStorageError(message);
+      }
     }
 
-    window.addEventListener("message", handleExternalAssetMessage);
+    window.addEventListener("message", handleWindowMessage);
+
     return () => {
-      window.removeEventListener("message", handleExternalAssetMessage);
+      window.removeEventListener("message", handleWindowMessage);
     };
-  }, []);
+  }, [applyAssetToItem, driveBrowserOpen, loadGoogleDriveAssets, storageTarget]);
 
   const filteredItems =
     filterCategoryId === "all"
       ? items
       : items.filter((item) => item.categoryId === filterCategoryId);
 
-  // Upload handler
+  const connectGoogleDrive = useCallback(async () => {
+    setConnectingDrive(true);
+    setDriveError("");
+    setStorageError("");
+
+    try {
+      const origin = window.location.origin;
+      const response = await fetch(
+        `${API_GOOGLE_AUTH}?origin=${encodeURIComponent(origin)}`,
+      );
+      const payload = (await response.json()) as
+        | { authUrl: string }
+        | { message?: string };
+
+      if (!response.ok || !("authUrl" in payload)) {
+        throw new Error(
+          "message" in payload && payload.message
+            ? payload.message
+            : "Could not start Google Drive authorization.",
+        );
+      }
+
+      const popup = window.open(
+        payload.authUrl,
+        "menuverse-google-drive",
+        "width=560,height=720,resizable=yes,scrollbars=yes",
+      );
+
+      if (!popup) {
+        throw new Error(
+          "Popup blocked. Allow popups for this site, then try connecting Google Drive again.",
+        );
+      }
+
+      popup.focus();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not start Google Drive authorization.";
+      setDriveNeedsAuth(true);
+      setDriveError(message);
+      setStorageError(message);
+      setConnectingDrive(false);
+    }
+  }, []);
+
   const uploadFile = useCallback(
-    async (file: File, type: "image" | "model" | "ios-model") => {
+    async (file: File, type: UploadKind, uploadMode: UploadMode) => {
       const setter = type === "image" ? setUploading : setUploadingModel;
       setter(true);
+      setStorageError("");
+      setDriveError("");
 
       try {
-        setStorageError("");
         const formData = new FormData();
         formData.append("file", file);
+        formData.append(
+          "provider",
+          uploadMode === "google-drive" ? "google-drive" : "local",
+        );
+        formData.append("target", getTargetForUpload(type));
 
         const response = await fetch(API_DASHBOARD_UPLOAD, {
-          method: "POST",
           body: formData,
+          method: "POST",
         });
 
         const result = (await response.json()) as
-          | { url: string }
-          | { message: string };
+          | { message?: string; needsAuth?: boolean; url?: string }
+          | undefined;
 
-        if (!response.ok || !("url" in result)) {
-          throw new Error(
-            "message" in result ? result.message : "Upload failed.",
-          );
+        if (!response.ok || !result?.url) {
+          if (result?.needsAuth) {
+            setDriveNeedsAuth(true);
+          }
+
+          throw new Error(result?.message || "Upload failed.");
         }
 
-        if (type === "image") {
-          setItemForm((previous) => ({ ...previous, imageUrl: result.url }));
-        } else if (type === "model") {
-          setItemForm((previous) => ({
-            ...previous,
-            arModelUrl: result.url,
-          }));
-        } else {
-          setItemForm((previous) => ({
-            ...previous,
-            arModelIosUrl: result.url,
-          }));
+        applyAssetToItem({
+          target: getTargetForUpload(type),
+          url: result.url,
+        });
+
+        if (uploadMode === "google-drive") {
+          setDriveNeedsAuth(false);
         }
       } catch (error) {
         setStorageError(
           error instanceof Error ? error.message : "Upload failed. Please retry.",
         );
-        // Silently fail – user can retry
       } finally {
         setter(false);
       }
     },
-    [],
+    [applyAssetToItem],
   );
 
-  // Category modal handlers
   function openAddCategory() {
     setCatForm(EMPTY_CATEGORY);
     setEditCatId(null);
@@ -203,19 +352,27 @@ export function DashboardMenuPage() {
   }
 
   function openEditCategory(categoryId: string) {
-    const cat = categories.find((c) => c.id === categoryId);
-    if (!cat) return;
-    setCatForm({ name: cat.name, description: cat.description });
+    const category = categories.find((entry) => entry.id === categoryId);
+    if (!category) {
+      return;
+    }
+
+    setCatForm({
+      description: category.description,
+      name: category.name,
+    });
     setEditCatId(categoryId);
     setCatModalOpen(true);
   }
 
   async function submitCategory() {
-    if (!catForm.name.trim()) return;
+    if (!catForm.name.trim()) {
+      return;
+    }
 
     const success = await saveCategory(editCatId, {
-      name: catForm.name.trim(),
       description: catForm.description.trim(),
+      name: catForm.name.trim(),
     });
 
     if (success) {
@@ -224,9 +381,9 @@ export function DashboardMenuPage() {
     }
   }
 
-  // Item modal handlers
   function openAddItem() {
     setStorageError("");
+    setDriveError("");
     setItemForm({
       ...EMPTY_ITEM,
       categoryId: categories[0]?.id ?? "",
@@ -236,36 +393,40 @@ export function DashboardMenuPage() {
   }
 
   function openEditItem(itemId: string) {
-    const item = items.find((i) => i.id === itemId);
-    if (!item) return;
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) {
+      return;
+    }
+
     setStorageError("");
+    setDriveError("");
     setItemForm({
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      imageUrl: item.imageUrl,
-      arModelUrl: item.arModelUrl ?? "",
       arModelIosUrl: item.arModelIosUrl ?? "",
+      arModelUrl: item.arModelUrl ?? "",
       categoryId: item.categoryId,
+      description: item.description,
+      imageUrl: item.imageUrl,
+      name: item.name,
+      price: item.price,
     });
     setEditItemId(itemId);
     setItemModalOpen(true);
   }
 
   async function submitItem() {
-    if (!itemForm.name.trim() || !itemForm.categoryId) return;
+    if (!itemForm.name.trim() || !itemForm.categoryId) {
+      return;
+    }
 
-    const data = {
-      categoryId: itemForm.categoryId,
-      name: itemForm.name.trim(),
-      description: itemForm.description.trim(),
-      price: itemForm.price,
-      imageUrl: itemForm.imageUrl || undefined,
-      arModelUrl: itemForm.arModelUrl || undefined,
+    const success = await saveItem(editItemId, {
       arModelIosUrl: itemForm.arModelIosUrl || undefined,
-    };
-
-    const success = await saveItem(editItemId, data);
+      arModelUrl: itemForm.arModelUrl || undefined,
+      categoryId: itemForm.categoryId,
+      description: itemForm.description.trim(),
+      imageUrl: itemForm.imageUrl || undefined,
+      name: itemForm.name.trim(),
+      price: itemForm.price,
+    });
 
     if (success) {
       setItemModalOpen(false);
@@ -281,6 +442,12 @@ export function DashboardMenuPage() {
     setStorageModalOpen(true);
   }
 
+  async function openDriveBrowser(target: ItemAssetTarget) {
+    setStorageTarget(target);
+    setDriveBrowserOpen(true);
+    await loadGoogleDriveAssets(target);
+  }
+
   async function applyStorageUrl() {
     if (!storageUrl.trim()) {
       setStorageError("Paste a hosted file URL first.");
@@ -290,33 +457,33 @@ export function DashboardMenuPage() {
     try {
       setStorageError("");
       const response = await fetch(API_GOOGLE_CALLBACK, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           provider: storageProvider,
           target: storageTarget,
           url: storageUrl.trim(),
         }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
       });
 
       const payload = (await response.json()) as
         | { asset: { target: ItemAssetTarget; url: string } }
-        | { message: string };
+        | { message?: string };
 
       if (!response.ok || !("asset" in payload)) {
         throw new Error(
-          "message" in payload ? payload.message : "Could not attach the asset.",
+          "message" in payload && payload.message
+            ? payload.message
+            : "Could not attach the asset.",
         );
       }
 
-      setItemForm((previous) => ({
-        ...previous,
-        [payload.asset.target]: payload.asset.url,
-      }));
+      applyAssetToItem(payload.asset);
       setStorageModalOpen(false);
       setStorageUrl("");
+      setStorageError("");
     } catch (error) {
       setStorageError(
         error instanceof Error ? error.message : "Could not attach the asset.",
@@ -325,12 +492,11 @@ export function DashboardMenuPage() {
   }
 
   function getCategoryName(categoryId: string) {
-    return categories.find((c) => c.id === categoryId)?.name ?? "—";
+    return categories.find((category) => category.id === categoryId)?.name ?? "-";
   }
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#0f766e]">Menu Builder</p>
@@ -339,15 +505,20 @@ export function DashboardMenuPage() {
           </h2>
         </div>
         <div className="flex gap-2">
-          <Button onClick={openAddCategory} variant="outline" size="sm">
+          <Button onClick={openAddCategory} size="sm" variant="outline">
             <Layers3 className="h-4 w-4" />
             Add Category
           </Button>
-          <Button onClick={openAddItem} variant="secondary" size="sm" disabled={categories.length === 0}>
+          <Button
+            disabled={categories.length === 0}
+            onClick={openAddItem}
+            size="sm"
+            variant="secondary"
+          >
             <Plus className="h-4 w-4" />
             Add Item
           </Button>
-          <Button onClick={() => void saveRestaurant()} disabled={saving} size="sm">
+          <Button disabled={saving} onClick={() => void saveRestaurant()} size="sm">
             <Save className="h-4 w-4" />
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -361,7 +532,6 @@ export function DashboardMenuPage() {
       ) : null}
       {saveSuccess ? <Badge variant="accent">{saveSuccess}</Badge> : null}
 
-      {/* Category chips for management */}
       {categories.length > 0 ? (
         <Card>
           <CardHeader className="pb-2">
@@ -370,30 +540,32 @@ export function DashboardMenuPage() {
               Categories
             </CardTitle>
             <CardDescription>
-              {categories.length} categories — click to edit, or manage below
+              {categories.length} categories - click to edit, or manage below
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
+              {categories.map((category) => (
                 <div
-                  key={cat.id}
+                  key={category.id}
                   className="group flex items-center gap-1.5 rounded-lg border border-[#e7dfd2] bg-[#fffcf8] px-3 py-2 text-sm transition hover:border-[#0f766e]/30 hover:bg-[#f7f3eb]"
                 >
-                  <span className="font-medium text-[#111827]">{cat.name}</span>
-                  <Badge variant="accent" className="text-[10px] px-1.5 py-0">
-                    {items.filter((i) => i.categoryId === cat.id).length}
+                  <span className="font-medium text-[#111827]">{category.name}</span>
+                  <Badge className="px-1.5 py-0 text-[10px]" variant="accent">
+                    {items.filter((item) => item.categoryId === category.id).length}
                   </Badge>
                   <button
-                    onClick={() => openEditCategory(cat.id)}
                     className="ml-1 rounded p-0.5 text-[#9ca3af] opacity-0 transition hover:text-[#0f766e] group-hover:opacity-100"
+                    onClick={() => openEditCategory(category.id)}
+                    type="button"
                   >
                     <Pencil className="h-3 w-3" />
                   </button>
                   {categories.length > 1 ? (
                     <button
-                      onClick={() => void deleteCategory(cat.id)}
                       className="rounded p-0.5 text-[#9ca3af] opacity-0 transition hover:text-red-500 group-hover:opacity-100"
+                      onClick={() => void deleteCategory(category.id)}
+                      type="button"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -405,7 +577,6 @@ export function DashboardMenuPage() {
         </Card>
       ) : null}
 
-      {/* Items Table */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -415,21 +586,21 @@ export function DashboardMenuPage() {
                 All Menu Items
               </CardTitle>
               <CardDescription>
-                {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} in your menu
+                {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} in
+                your menu
               </CardDescription>
             </div>
-            {/* Category filter */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-[#6b7280]">Filter:</span>
               <select
-                value={filterCategoryId}
-                onChange={(e) => setFilterCategoryId(e.target.value)}
                 className="rounded-md border border-[#e7dfd2] bg-[#fffcf8] px-3 py-1.5 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
+                onChange={(event) => setFilterCategoryId(event.target.value)}
+                value={filterCategoryId}
               >
                 <option value="all">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
                   </option>
                 ))}
               </select>
@@ -441,7 +612,7 @@ export function DashboardMenuPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-t border-b border-[#e7dfd2] bg-[#faf7f2]">
+                  <tr className="border-b border-t border-[#e7dfd2] bg-[#faf7f2]">
                     <th className="px-5 py-3 text-left font-medium text-[#6b7280]">
                       Image
                     </th>
@@ -489,7 +660,7 @@ export function DashboardMenuPage() {
                         {item.name}
                       </td>
                       <td className="hidden px-5 py-3 sm:table-cell">
-                        <Badge variant="default" className="text-[11px]">
+                        <Badge className="text-[11px]" variant="default">
                           {getCategoryName(item.categoryId)}
                         </Badge>
                       </td>
@@ -497,15 +668,13 @@ export function DashboardMenuPage() {
                         {formatPrice(item.price)}
                       </td>
                       <td className="hidden px-5 py-3 text-[#6b7280] md:table-cell">
-                        <span className="line-clamp-1">
-                          {item.description}
-                        </span>
+                        <span className="line-clamp-1">{item.description}</span>
                       </td>
                       <td className="px-5 py-3 text-center">
                         {hasArAsset(item) ? (
                           <Badge variant="accent">3D</Badge>
                         ) : (
-                          <span className="text-xs text-[#d9cdbb]">—</span>
+                          <span className="text-xs text-[#d9cdbb]">-</span>
                         )}
                       </td>
                       <td className="hidden px-5 py-3 lg:table-cell">
@@ -514,9 +683,7 @@ export function DashboardMenuPage() {
                             <Badge
                               key={tag}
                               className="text-[10px]"
-                              variant={
-                                tag === "AR Ready" ? "accent" : "default"
-                              }
+                              variant={tag === "AR Ready" ? "accent" : "default"}
                             >
                               {tag}
                             </Badge>
@@ -531,27 +698,31 @@ export function DashboardMenuPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <Button
-                            onClick={() => setTagEditorItemId(tagEditorItemId === item.id ? null : item.id)}
-                            size="icon"
-                            variant="ghost"
                             className="h-8 w-8"
+                            onClick={() =>
+                              setTagEditorItemId(
+                                tagEditorItemId === item.id ? null : item.id,
+                              )
+                            }
+                            size="icon"
                             title="Edit tags"
+                            variant="ghost"
                           >
                             <Layers3 className="h-3.5 w-3.5" />
                           </Button>
                           <Button
+                            className="h-8 w-8"
                             onClick={() => openEditItem(item.id)}
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Button
+                            className="h-8 w-8 text-red-500 hover:text-red-600"
                             onClick={() => void deleteItem(item.id)}
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-red-500 hover:text-red-600"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -571,25 +742,26 @@ export function DashboardMenuPage() {
           )}
         </CardContent>
 
-        {/* Inline tag editor for the selected item */}
         {tagEditorItemId ? (
           <div className="border-t border-[#e7dfd2] px-5 py-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6b7280]">
-              Tags for: {items.find((i) => i.id === tagEditorItemId)?.name}
+              Tags for: {items.find((item) => item.id === tagEditorItemId)?.name}
             </p>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => {
-                const item = items.find((i) => i.id === tagEditorItemId);
+                const item = items.find((entry) => entry.id === tagEditorItemId);
                 const active = item?.dietaryTags.includes(tag) ?? false;
+
                 return (
                   <button
                     key={tag}
-                    onClick={() => toggleItemTag(tagEditorItemId, tag)}
                     className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
                       active
                         ? "bg-[#0f766e] text-white"
                         : "bg-[#f2ede2] text-[#6b7280] hover:bg-[#e7dfd2]"
                     }`}
+                    onClick={() => toggleItemTag(tagEditorItemId, tag)}
+                    type="button"
                   >
                     {tag}
                   </button>
@@ -600,141 +772,184 @@ export function DashboardMenuPage() {
         ) : null}
       </Card>
 
-      {/* ========= CATEGORY MODAL ========= */}
       <Modal
-        open={catModalOpen}
-        onClose={() => setCatModalOpen(false)}
-        title={editCatId ? "Edit Category" : "New Category"}
         description={
           editCatId
             ? "Update the category details."
             : "Create a new menu category."
         }
+        onClose={() => setCatModalOpen(false)}
+        open={catModalOpen}
+        title={editCatId ? "Edit Category" : "New Category"}
       >
         <div className="space-y-4">
           <Field label="Category Name">
             <Input
-              placeholder="e.g. Starters, Mains, Desserts..."
-              value={catForm.name}
+              autoFocus
               onChange={(event) =>
                 setCatForm((previous) => ({
                   ...previous,
                   name: event.target.value,
                 }))
               }
-              autoFocus
+              placeholder="e.g. Starters, Mains, Desserts..."
+              value={catForm.name}
             />
           </Field>
           <Field label="Description">
             <Textarea
-              placeholder="A short description of this section..."
-              rows={3}
-              value={catForm.description}
               onChange={(event) =>
                 setCatForm((previous) => ({
                   ...previous,
                   description: event.target.value,
                 }))
               }
+              placeholder="A short description of this section..."
+              rows={3}
+              value={catForm.description}
             />
           </Field>
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              onClick={() => setCatModalOpen(false)}
-              variant="outline"
-            >
+            <Button onClick={() => setCatModalOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={submitCategory} disabled={!catForm.name.trim()}>
+            <Button disabled={!catForm.name.trim()} onClick={submitCategory}>
               {editCatId ? "Update" : "Create Category"}
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* ========= ITEM MODAL ========= */}
       <Modal
-        open={itemModalOpen}
-        onClose={() => setItemModalOpen(false)}
-        title={editItemId ? "Edit Menu Item" : "New Menu Item"}
         description={
           editItemId
             ? "Update item details, image, and 3D model."
             : "Add a new item with image and optional 3D model."
         }
-        maxWidth="max-w-xl"
+        maxWidth="max-w-3xl"
+        onClose={() => setItemModalOpen(false)}
+        open={itemModalOpen}
+        title={editItemId ? "Edit Menu Item" : "New Menu Item"}
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {storageError ? (
             <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
               {storageError}
             </Badge>
           ) : null}
-          {/* Category selector */}
+
+          <div className="rounded-xl border border-[#dbe7e4] bg-[#f7fbfa] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#0f766e]">
+                  Google Drive uploads
+                </p>
+                <p className="text-sm text-[#4b5563]">
+                  Upload images and 3D models into your configured Drive folder or
+                  browse files already stored there.
+                </p>
+              </div>
+              <Button
+                disabled={connectingDrive}
+                onClick={() => void connectGoogleDrive()}
+                size="sm"
+                variant={driveNeedsAuth ? "default" : "outline"}
+              >
+                {connectingDrive ? "Connecting..." : "Connect Google Drive"}
+              </Button>
+            </div>
+            {driveError ? (
+              <p className="mt-3 text-sm text-[#b45309]">{driveError}</p>
+            ) : null}
+          </div>
+
           <Field label="Category">
             <select
-              value={itemForm.categoryId}
+              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
               onChange={(event) =>
                 setItemForm((previous) => ({
                   ...previous,
                   categoryId: event.target.value,
                 }))
               }
-              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
+              value={itemForm.categoryId}
             >
-              <option value="" disabled>
+              <option disabled value="">
                 Select a category...
               </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
           </Field>
 
-          {/* Image upload */}
           <Field label="Item Image">
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col gap-4 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4 lg:flex-row">
               {itemForm.imageUrl ? (
-                <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-[#ece4d8] bg-white">
+                <div className="relative h-32 w-full overflow-hidden rounded-lg border border-[#ece4d8] bg-white lg:w-44">
                   <Image
                     alt="Item preview"
                     className="object-cover"
                     fill
-                    sizes="128px"
+                    sizes="176px"
                     src={itemForm.imageUrl}
                   />
                 </div>
               ) : null}
               <div className="flex-1">
                 <input
-                  ref={imageInputRef}
                   accept="image/*"
                   className="hidden"
-                  type="file"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
-                    if (file) void uploadFile(file, "image");
+                    if (file) {
+                      void uploadFile(file, "image", imageUploadModeRef.current);
+                    }
                     event.target.value = "";
                   }}
+                  ref={imageInputRef}
+                  type="file"
                 />
                 <button
-                  onClick={() => imageInputRef.current?.click()}
-                  type="button"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-4 py-6 text-sm text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
                   disabled={uploading}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-4 py-6 text-sm text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
+                  onClick={() => {
+                    imageUploadModeRef.current = "local";
+                    imageInputRef.current?.click();
+                  }}
+                  type="button"
                 >
                   {uploading ? (
                     <span className="animate-pulse">Uploading...</span>
                   ) : (
                     <>
                       <ImagePlus className="h-5 w-5" />
-                      <span>Click to upload image</span>
+                      <span>Upload image to app</span>
                     </>
                   )}
                 </button>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => {
+                      imageUploadModeRef.current = "google-drive";
+                      imageInputRef.current?.click();
+                    }}
+                    size="sm"
+                    type="button"
+                    variant="secondary"
+                  >
+                    Upload to Google Drive
+                  </Button>
+                  <Button
+                    onClick={() => void openDriveBrowser("imageUrl")}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    Browse Drive
+                  </Button>
                   <Button
                     onClick={() => openStorageModal("imageUrl")}
                     size="sm"
@@ -748,188 +963,168 @@ export function DashboardMenuPage() {
             </div>
             <Input
               className="mt-3"
-              placeholder="https://utfs.io/f/... or https://drive.google.com/file/d/..."
-              value={itemForm.imageUrl}
               onChange={(event) =>
                 setItemForm((previous) => ({
                   ...previous,
                   imageUrl: event.target.value,
                 }))
               }
+              placeholder="https://utfs.io/f/... or https://drive.google.com/file/d/..."
+              value={itemForm.imageUrl}
             />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Item Name">
               <Input
-                placeholder="e.g. Classic Burger"
-                value={itemForm.name}
                 onChange={(event) =>
                   setItemForm((previous) => ({
                     ...previous,
                     name: event.target.value,
                   }))
                 }
+                placeholder="e.g. Classic Burger"
+                value={itemForm.name}
               />
             </Field>
             <Field label="Price ($)">
               <Input
-                type="number"
                 min={0}
-                step={0.01}
-                value={itemForm.price || ""}
                 onChange={(event) =>
                   setItemForm((previous) => ({
                     ...previous,
                     price: Number(event.target.value || 0),
                   }))
                 }
+                step={0.01}
+                type="number"
+                value={itemForm.price || ""}
               />
             </Field>
           </div>
 
           <Field label="Description">
             <Textarea
-              placeholder="Describe the dish, ingredients, and AR highlight..."
-              rows={3}
-              value={itemForm.description}
               onChange={(event) =>
                 setItemForm((previous) => ({
                   ...previous,
                   description: event.target.value,
                 }))
               }
+              placeholder="Describe the dish, ingredients, and AR highlight..."
+              rows={3}
+              value={itemForm.description}
             />
           </Field>
 
-          {/* 3D Model upload */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="3D Model (.glb / .gltf)">
-              <div className="flex flex-col gap-2">
-                {itemForm.arModelUrl ? (
-                  <Badge variant="accent" className="w-fit">
-                    <Package className="mr-1 h-3 w-3" />
-                    Android Model
-                  </Badge>
-                ) : null}
-                <input
-                  ref={modelInputRef}
-                  accept=".glb,.gltf"
-                  className="hidden"
-                  type="file"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void uploadFile(file, "model");
-                    event.target.value = "";
-                  }}
-                />
-                <button
-                  onClick={() => modelInputRef.current?.click()}
-                  type="button"
-                  disabled={uploadingModel}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Upload .glb</span>
-                </button>
-                <Button
-                  onClick={() => openStorageModal("arModelUrl")}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Storage Link
-                </Button>
-                <Input
-                  placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
-                  value={itemForm.arModelUrl}
-                  onChange={(event) =>
-                    setItemForm((previous) => ({
-                      ...previous,
-                      arModelUrl: event.target.value,
-                    }))
+          <div className="grid gap-4 lg:grid-cols-2">
+            <AssetField
+              actionLabel="Upload .glb / .gltf"
+              assetUrl={itemForm.arModelUrl}
+              badgeLabel="Android Model"
+              browseLabel="Browse Drive"
+              onBrowseDrive={() => void openDriveBrowser("arModelUrl")}
+              onLocalUpload={() => {
+                modelUploadModeRef.current = "local";
+                modelInputRef.current?.click();
+              }}
+              onOpenStorageModal={() => openStorageModal("arModelUrl")}
+              onRemoteUpload={() => {
+                modelUploadModeRef.current = "google-drive";
+                modelInputRef.current?.click();
+              }}
+              onUrlChange={(value) =>
+                setItemForm((previous) => ({
+                  ...previous,
+                  arModelUrl: value,
+                }))
+              }
+              placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
+              uploading={uploadingModel}
+            >
+              <input
+                accept=".glb,.gltf"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    void uploadFile(file, "model", modelUploadModeRef.current);
                   }
-                />
-              </div>
-            </Field>
+                  event.target.value = "";
+                }}
+                ref={modelInputRef}
+                type="file"
+              />
+            </AssetField>
 
-            <Field label="iOS Model (.usdz)">
-              <div className="flex flex-col gap-2">
-                {itemForm.arModelIosUrl ? (
-                  <Badge variant="accent" className="w-fit">
-                    <Package className="mr-1 h-3 w-3" />
-                    iOS Model
-                  </Badge>
-                ) : null}
-                <input
-                  id="ios-model-input"
-                  accept=".usdz"
-                  className="hidden"
-                  type="file"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) void uploadFile(file, "ios-model");
-                    event.target.value = "";
-                  }}
-                />
-                <button
-                  onClick={() => document.getElementById("ios-model-input")?.click()}
-                  type="button"
-                  disabled={uploadingModel}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-[#fffcf8] px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
-                >
-                  <Upload className="h-4 w-4" />
-                  <span>Upload .usdz</span>
-                </button>
-                <Button
-                  onClick={() => openStorageModal("arModelIosUrl")}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Storage Link
-                </Button>
-                <Input
-                  placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
-                  value={itemForm.arModelIosUrl}
-                  onChange={(event) =>
-                    setItemForm((previous) => ({
-                      ...previous,
-                      arModelIosUrl: event.target.value,
-                    }))
+            <AssetField
+              actionLabel="Upload .usdz"
+              assetUrl={itemForm.arModelIosUrl}
+              badgeLabel="iOS Model"
+              browseLabel="Browse Drive"
+              onBrowseDrive={() => void openDriveBrowser("arModelIosUrl")}
+              onLocalUpload={() => {
+                iosUploadModeRef.current = "local";
+                iosModelInputRef.current?.click();
+              }}
+              onOpenStorageModal={() => openStorageModal("arModelIosUrl")}
+              onRemoteUpload={() => {
+                iosUploadModeRef.current = "google-drive";
+                iosModelInputRef.current?.click();
+              }}
+              onUrlChange={(value) =>
+                setItemForm((previous) => ({
+                  ...previous,
+                  arModelIosUrl: value,
+                }))
+              }
+              placeholder="https://drive.google.com/file/d/... or https://utfs.io/f/..."
+              uploading={uploadingModel}
+            >
+              <input
+                accept=".usdz"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    void uploadFile(file, "ios-model", iosUploadModeRef.current);
                   }
-                />
-              </div>
-            </Field>
+                  event.target.value = "";
+                }}
+                ref={iosModelInputRef}
+                type="file"
+              />
+            </AssetField>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              onClick={() => setItemModalOpen(false)}
-              variant="outline"
-            >
+            <Button onClick={() => setItemModalOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={submitItem} disabled={!itemForm.name.trim() || !itemForm.categoryId}>
+            <Button
+              disabled={!itemForm.name.trim() || !itemForm.categoryId}
+              onClick={submitItem}
+            >
               {editItemId ? "Update Item" : "Add Item"}
             </Button>
           </div>
         </div>
       </Modal>
+
       <Modal
-        open={storageModalOpen}
-        onClose={() => setStorageModalOpen(false)}
-        title="Attach External Asset"
         description="Use a hosted UploadThing, Google Drive, or direct file URL."
+        onClose={() => setStorageModalOpen(false)}
+        open={storageModalOpen}
+        title="Attach External Asset"
       >
         <div className="space-y-4">
           <Field label="Storage Provider">
             <select
-              value={storageProvider}
+              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
               onChange={(event) =>
                 setStorageProvider(event.target.value as ExternalStorageProvider)
               }
-              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
+              value={storageProvider}
             >
               {STORAGE_PROVIDER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -938,30 +1133,238 @@ export function DashboardMenuPage() {
               ))}
             </select>
           </Field>
+
+          {storageProvider === "google-drive" ? (
+            <div className="rounded-lg border border-[#dbe7e4] bg-[#f7fbfa] p-4">
+              <p className="text-sm font-semibold text-[#0f766e]">
+                Google Drive helper
+              </p>
+              <p className="mt-1 text-sm text-[#4b5563]">
+                Connect Drive once, then browse files from the configured folder
+                or paste a shareable Drive link here.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  disabled={connectingDrive}
+                  onClick={() => void connectGoogleDrive()}
+                  size="sm"
+                  type="button"
+                >
+                  {connectingDrive ? "Connecting..." : "Connect Drive"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setStorageModalOpen(false);
+                    void openDriveBrowser(storageTarget);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Browse Folder
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           <Field label="Hosted File URL">
             <Input
               autoFocus
+              onChange={(event) => setStorageUrl(event.target.value)}
               placeholder="Paste the public file URL"
               value={storageUrl}
-              onChange={(event) => setStorageUrl(event.target.value)}
             />
           </Field>
+
           {storageError ? (
             <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
               {storageError}
             </Badge>
           ) : null}
+
           <div className="flex justify-end gap-2 pt-2">
             <Button onClick={() => setStorageModalOpen(false)} variant="outline">
               Cancel
             </Button>
-            <Button onClick={() => void applyStorageUrl()}>
-              Attach Asset
-            </Button>
+            <Button onClick={() => void applyStorageUrl()}>Attach Asset</Button>
           </div>
         </div>
       </Modal>
+
+      <Modal
+        description={`Files from your Google Drive folder for ${getTargetLabel(storageTarget)}.`}
+        maxWidth="max-w-4xl"
+        onClose={() => setDriveBrowserOpen(false)}
+        open={driveBrowserOpen}
+        title="Google Drive Library"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-[#111827]">
+                Pick a file for {getTargetLabel(storageTarget)}
+              </p>
+              <p className="text-sm text-[#6b7280]">
+                Uploaded files are read from your configured Google Drive folder.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={connectingDrive}
+                onClick={() => void connectGoogleDrive()}
+                size="sm"
+                type="button"
+                variant={driveNeedsAuth ? "default" : "outline"}
+              >
+                {connectingDrive ? "Connecting..." : "Connect Drive"}
+              </Button>
+              <Button
+                disabled={driveLoading}
+                onClick={() => void loadGoogleDriveAssets(storageTarget)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw className={`h-4 w-4 ${driveLoading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {driveError ? (
+            <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
+              {driveError}
+            </Badge>
+          ) : null}
+
+          {driveLoading ? (
+            <div className="rounded-xl border border-dashed border-[#d9cdbb] bg-[#fffcf8] p-10 text-center text-sm text-[#6b7280]">
+              Loading Google Drive files...
+            </div>
+          ) : driveAssets.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {driveAssets.map((asset) => (
+                <Card key={asset.id} className="overflow-hidden">
+                  <CardContent className="space-y-4 p-4">
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-[#ece4d8] bg-[#f7f3eb]">
+                      {storageTarget === "imageUrl" ? (
+                        <Image
+                          alt={asset.name}
+                          className="object-cover"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          src={asset.thumbnailUrl || asset.previewUrl}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 px-4 text-center text-[#6b7280]">
+                          <Package className="h-8 w-8 text-[#0f766e]" />
+                          <p className="text-xs font-medium uppercase tracking-[0.18em]">
+                            {asset.name.split(".").pop() || "File"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="line-clamp-1 font-semibold text-[#111827]">
+                        {asset.name}
+                      </p>
+                      <p className="text-xs text-[#6b7280]">{asset.mimeType}</p>
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        applyAssetToItem(asset);
+                        setDriveBrowserOpen(false);
+                        setDriveError("");
+                      }}
+                      type="button"
+                    >
+                      Use This File
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#d9cdbb] bg-[#fffcf8] p-10 text-center text-sm text-[#6b7280]">
+              No matching files were found in the Google Drive folder yet.
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
+  );
+}
+
+function AssetField({
+  actionLabel,
+  assetUrl,
+  badgeLabel,
+  browseLabel,
+  children,
+  onBrowseDrive,
+  onLocalUpload,
+  onOpenStorageModal,
+  onRemoteUpload,
+  onUrlChange,
+  placeholder,
+  uploading,
+}: {
+  actionLabel: string;
+  assetUrl: string;
+  badgeLabel: string;
+  browseLabel: string;
+  children: React.ReactNode;
+  onBrowseDrive: () => void;
+  onLocalUpload: () => void;
+  onOpenStorageModal: () => void;
+  onRemoteUpload: () => void;
+  onUrlChange: (value: string) => void;
+  placeholder: string;
+  uploading: boolean;
+}) {
+  return (
+    <Field label={badgeLabel}>
+      <div className="flex flex-col gap-2 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
+        {children}
+        {assetUrl ? (
+          <Badge className="w-fit" variant="accent">
+            <Package className="mr-1 h-3 w-3" />
+            {badgeLabel}
+          </Badge>
+        ) : null}
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
+          disabled={uploading}
+          onClick={onLocalUpload}
+          type="button"
+        >
+          <Upload className="h-4 w-4" />
+          <span>{uploading ? "Uploading..." : actionLabel}</span>
+        </button>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onRemoteUpload} size="sm" type="button" variant="secondary">
+            Upload to Google Drive
+          </Button>
+          <Button onClick={onBrowseDrive} size="sm" type="button" variant="outline">
+            {browseLabel}
+          </Button>
+          <Button
+            onClick={onOpenStorageModal}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Storage Link
+          </Button>
+        </div>
+        <Input
+          onChange={(event) => onUrlChange(event.target.value)}
+          placeholder={placeholder}
+          value={assetUrl}
+        />
+      </div>
+    </Field>
   );
 }
 
@@ -982,4 +1385,28 @@ function Field({
       {children}
     </label>
   );
+}
+
+function getTargetForUpload(type: UploadKind): ItemAssetTarget {
+  if (type === "image") {
+    return "imageUrl";
+  }
+
+  if (type === "ios-model") {
+    return "arModelIosUrl";
+  }
+
+  return "arModelUrl";
+}
+
+function getTargetLabel(target: ItemAssetTarget) {
+  if (target === "imageUrl") {
+    return "item images";
+  }
+
+  if (target === "arModelIosUrl") {
+    return "iOS USDZ models";
+  }
+
+  return "AR GLB/GLTF models";
 }

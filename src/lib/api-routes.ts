@@ -34,6 +34,8 @@ export const API_DASHBOARD_ACCOUNT_PASSWORD =
 
 // ─── Dashboard – Upload ───
 export const API_DASHBOARD_UPLOAD = "/api/dashboard/upload";
+export const API_GOOGLE_AUTH = "/api/google/auth";
+export const API_GOOGLE_FILES = "/api/google/files";
 
 // ─── Dashboard – Users (admin) ───
 export const API_DASHBOARD_USERS = "/api/dashboard/users";

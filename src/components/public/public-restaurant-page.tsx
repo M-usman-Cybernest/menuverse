@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock3, LocateFixed, Move3D, Store } from "lucide-react";
+import { Clock3, Eye, LocateFixed, Move3D, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -11,6 +11,7 @@ import { ArViewerDrawer } from "@/components/ar/ar-viewer-drawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
 import { hasArAsset } from "@/lib/storage";
 import type { RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
@@ -37,6 +38,7 @@ export function PublicRestaurantPage({
     () => searchParams.get("item") ?? "",
   );
   const [activeCategoryId, setActiveCategoryId] = useState("all");
+  const [activeItemModalId, setActiveItemModalId] = useState("");
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -55,10 +57,12 @@ export function PublicRestaurantPage({
       }));
   }, [initialDataset]);
 
-  // Filtered sections based on active category
   const filteredSections = useMemo(() => {
-    if (activeCategoryId === "all") return sections;
-    return sections.filter((s) => s.category.id === activeCategoryId);
+    if (activeCategoryId === "all") {
+      return sections;
+    }
+
+    return sections.filter((section) => section.category.id === activeCategoryId);
   }, [sections, activeCategoryId]);
 
   const todayTiming = initialDataset?.restaurant.timings.find(
@@ -68,8 +72,8 @@ export function PublicRestaurantPage({
     initialDataset?.items.find(
       (item) => item.id === activeArItemId && hasArAsset(item),
     ) ?? null;
-
-  // Count of AR-ready items
+  const activeModalItem =
+    initialDataset?.items.find((item) => item.id === activeItemModalId) ?? null;
   const arReadyItems = initialDataset?.items.filter(hasArAsset) ?? [];
 
   if (!initialDataset) {
@@ -87,8 +91,7 @@ export function PublicRestaurantPage({
     );
   }
 
-  const qrBaseValue =
-    publicPath === "/" ? origin : `${origin}${publicPath}`;
+  const qrBaseValue = publicPath === "/" ? origin : `${origin}${publicPath}`;
 
   return (
     <>
@@ -169,26 +172,23 @@ export function PublicRestaurantPage({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {arReadyItems
-                  .slice(0, 3)
-                  .map((item) => (
-                    <Button
-                      key={item.id}
-                      onClick={() => setActiveArItemId(item.id)}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      <Move3D className="h-4 w-4" />
-                      {item.name}
-                    </Button>
-                  ))}
+                {arReadyItems.slice(0, 3).map((item) => (
+                  <Button
+                    key={item.id}
+                    onClick={() => setActiveArItemId(item.id)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Move3D className="h-4 w-4" />
+                    {item.name}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Category filter bar */}
         <section className="border-b border-[#ece4d8] bg-[#fffaf2]">
           <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-4 sm:px-6 lg:px-8">
             <Button
@@ -213,10 +213,9 @@ export function PublicRestaurantPage({
           </div>
         </section>
 
-        {/* Menu items grid */}
         <section className="mx-auto max-w-7xl space-y-12 px-4 py-8 sm:px-6 lg:px-8">
           {filteredSections.map(({ category, items }) => (
-            <div id={category.id} key={category.id} className="space-y-5">
+            <div className="space-y-5" id={category.id} key={category.id}>
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
                   {category.name}
@@ -244,9 +243,8 @@ export function PublicRestaurantPage({
                           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                           src={item.imageUrl}
                         />
-                        {/* AR badge overlay */}
                         {hasArAsset(item) ? (
-                          <div className="absolute top-3 right-3">
+                          <div className="absolute right-3 top-3">
                             <Badge className="bg-[#0f766e] text-white shadow-lg">
                               <Move3D className="mr-1 h-3 w-3" />
                               AR Ready
@@ -279,12 +277,21 @@ export function PublicRestaurantPage({
                             </Badge>
                           ))}
                         </div>
-                        <div className="mt-auto pt-1">
+                        <div className="mt-auto flex flex-wrap gap-2 pt-1">
+                          <Button
+                            className="flex-1"
+                            onClick={() => setActiveItemModalId(item.id)}
+                            type="button"
+                            variant="outline"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View Item
+                          </Button>
                           {hasArAsset(item) ? (
                             <Button
+                              className="flex-1 bg-[#0f766e] text-white hover:bg-[#0d6b63]"
                               onClick={() => setActiveArItemId(item.id)}
                               type="button"
-                              className="w-full bg-[#0f766e] text-white hover:bg-[#0d6b63]"
                             >
                               <Move3D className="h-4 w-4" />
                               Open 3D Preview
@@ -300,7 +307,6 @@ export function PublicRestaurantPage({
           ))}
         </section>
 
-        {/* Timings & Branches */}
         <section className="border-t border-[#ece4d8] bg-[#fffaf2]">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
             <div className="space-y-4">
@@ -310,8 +316,8 @@ export function PublicRestaurantPage({
               <div className="grid gap-3">
                 {initialDataset.restaurant.timings.map((timing) => (
                   <div
-                    key={timing.day}
                     className="flex items-center justify-between rounded-lg border border-[#e7dfd2] bg-white px-4 py-3"
+                    key={timing.day}
                   >
                     <p className="font-medium text-[#111827]">{timing.day}</p>
                     <p className="text-sm text-[#6b7280]">
@@ -353,10 +359,93 @@ export function PublicRestaurantPage({
         </section>
       </main>
 
+      <Modal
+        description={
+          activeModalItem
+            ? `${activeModalItem.prepTime} - ${formatPrice(activeModalItem.price)}`
+            : undefined
+        }
+        maxWidth="max-w-3xl"
+        onClose={() => setActiveItemModalId("")}
+        open={Boolean(activeModalItem)}
+        title={activeModalItem?.name}
+      >
+        {activeModalItem ? (
+          <div className="space-y-5">
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-[#ece4d8] bg-[#fffaf2]">
+              <Image
+                alt={activeModalItem.name}
+                className="object-cover"
+                fill
+                sizes="100vw"
+                src={activeModalItem.imageUrl}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {activeModalItem.dietaryTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={tag === "AR Ready" ? "accent" : "default"}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+
+            <p className="text-base leading-7 text-[#4b5563]">
+              {activeModalItem.description}
+            </p>
+
+            <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#111827]">
+                    Particular item details
+                  </p>
+                  <p className="text-sm text-[#6b7280]">
+                    This modal highlights the selected card item on the public home
+                    page.
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-[#6b7280]">Price</p>
+                  <p className="text-xl font-semibold text-[#111827]">
+                    {formatPrice(activeModalItem.price)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {hasArAsset(activeModalItem) ? (
+                <Button
+                  onClick={() => {
+                    setActiveItemModalId("");
+                    setActiveArItemId(activeModalItem.id);
+                  }}
+                  type="button"
+                >
+                  <Move3D className="h-4 w-4" />
+                  Open 3D Preview
+                </Button>
+              ) : null}
+              <Button
+                onClick={() => setActiveItemModalId("")}
+                type="button"
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
       <ArViewerDrawer
         item={activeItem}
-        open={Boolean(activeItem)}
         onClose={() => setActiveArItemId("")}
+        open={Boolean(activeItem)}
         qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}`}
         restaurantName={initialDataset.restaurant.name}
       />
