@@ -9,6 +9,7 @@ import { ModelViewerElement } from "@/components/ar/model-viewer-element";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { resolveDriveUrl } from "@/lib/google-drive";
 import type { MenuItem } from "@/lib/types";
 
 type ArViewerDrawerProps = {
@@ -98,14 +99,6 @@ export function ArViewerDrawer({
           </div>
 
           <div className="flex flex-wrap gap-3 pt-2">
-            {item.arModelIosUrl && (
-              <Button asChild variant="outline" className="rounded-xl">
-                <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
-                  <Move3D className="mr-2 h-4 w-4" />
-                  iOS View
-                </a>
-              </Button>
-            )}
             <Button onClick={onClose} className="rounded-xl bg-[#111827] text-white hover:bg-black">
               Close Preview
             </Button>

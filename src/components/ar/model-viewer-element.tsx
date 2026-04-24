@@ -11,6 +11,7 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { resolveDriveUrl } from "@/lib/google-drive";
 import type { MenuItem } from "@/lib/types";
 
 type ModelViewerElementProps = {
@@ -43,18 +44,11 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
   }, []);
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      if (!modelViewerRef.current) {
-        return;
-      }
+    if (!modelViewerRef.current) {
+      return;
+    }
 
-      modelViewerRef.current.dismissPoster();
-      modelViewerRef.current.cameraOrbit = DEFAULT_CAMERA_ORBIT;
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    modelViewerRef.current.cameraOrbit = DEFAULT_CAMERA_ORBIT;
   }, [item.id]);
 
   useEffect(() => {
@@ -69,25 +63,6 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
     };
   }, []);
 
-  if (!item.arModelUrl && item.arModelIosUrl) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[#f7f3eb] p-6 text-center">
-        <div className="space-y-2">
-          <p className="text-lg font-semibold text-[#111827]">3D model ready</p>
-          <p className="max-w-md text-sm leading-6 text-[#6b7280]">
-            This item already has an iOS Quick Look model. Open it on a supported
-            iPhone or iPad for the native 3D preview.
-          </p>
-        </div>
-        <Button asChild size="lg">
-          <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
-            <Move3D className="h-4 w-4" />
-            Open 3D Model
-          </a>
-        </Button>
-      </div>
-    );
-  }
 
   function handleResetView() {
     if (!modelViewerRef.current) {
@@ -133,15 +108,17 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         field-of-view="28deg"
         interpolation-decay="120"
         interaction-prompt-style="wiggle"
-        ios-src={item.arModelIosUrl}
+        ios-src={resolveDriveUrl(item.arModelIosUrl)}
         max-camera-orbit="auto auto 140%"
         max-field-of-view="36deg"
         min-camera-orbit="auto auto 58%"
         min-field-of-view="22deg"
         orbit-sensitivity="0.8"
-        poster={item.imageUrl}
+        poster={resolveDriveUrl(item.imageUrl, "image")}
         shadow-intensity="1"
-        src={item.arModelUrl}
+        src={resolveDriveUrl(item.arModelUrl)}
+        onLoad={() => console.log("Model loaded successfully")}
+        onError={(e) => console.error("Model failed to load", e)}
         touch-action="none"
         zoom-sensitivity="0.8"
         className="h-full w-full rounded-lg bg-[#f7f3eb]"

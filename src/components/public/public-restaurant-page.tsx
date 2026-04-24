@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { resolveDriveUrl } from "@/lib/google-drive";
 import { hasArAsset } from "@/lib/storage";
 import type { MenuItem, RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
@@ -143,11 +144,6 @@ export function PublicRestaurantPage({
 
     setActiveItemModalId("");
 
-    if (isMobileDevice) {
-      openNativeAr(item);
-      return;
-    }
-
     if (!isDesktop) {
       setManualArItemId(itemId);
     }
@@ -165,12 +161,13 @@ export function PublicRestaurantPage({
     const isAndroidMobile = /android/.test(userAgent);
 
     if (isAppleMobile && item.arModelIosUrl) {
-      window.location.href = item.arModelIosUrl;
+      window.location.href = resolveDriveUrl(item.arModelIosUrl);
       return;
     }
 
     if (isAndroidMobile && item.arModelUrl) {
-      const modelUrl = new URL(item.arModelUrl, window.location.origin).toString();
+      const resolvedModelUrl = resolveDriveUrl(item.arModelUrl);
+      const modelUrl = new URL(resolvedModelUrl, window.location.origin).toString();
       const fallbackUrl = `${window.location.origin}${publicPath}?item=${item.id}`;
       const intentUrl =
         `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(modelUrl)}` +
@@ -183,12 +180,12 @@ export function PublicRestaurantPage({
     }
 
     if (item.arModelIosUrl) {
-      window.location.href = item.arModelIosUrl;
+      window.location.href = resolveDriveUrl(item.arModelIosUrl);
       return;
     }
 
     if (item.arModelUrl) {
-      window.open(item.arModelUrl, "_blank", "noopener,noreferrer");
+      window.open(resolveDriveUrl(item.arModelUrl), "_blank", "noopener,noreferrer");
     }
   }
 

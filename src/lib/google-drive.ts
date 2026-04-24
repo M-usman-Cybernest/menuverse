@@ -93,7 +93,7 @@ export function getDrivePreviewUrl(fileId: string) {
 }
 
 export function getDriveDownloadUrl(fileId: string) {
-  return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  return `https://docs.google.com/uc?export=download&id=${fileId}`;
 }
 
 export function getDriveImageUrl(fileId: string) {
@@ -110,6 +110,27 @@ export function extractDriveFileId(url: string) {
   const queryMatch = url.match(/[?&]id=([^&]+)/);
 
   return queryMatch?.[1] ?? null;
+}
+
+export function resolveDriveUrl(
+  url: string | undefined | null,
+  mode: "download" | "image" = "download",
+) {
+  if (!url) {
+    return "";
+  }
+
+  if (url.includes("drive.google.com") || url.includes("docs.google.com")) {
+    const fileId = extractDriveFileId(url);
+    if (fileId) {
+      if (mode === "image") {
+        return getDriveImageUrl(fileId);
+      }
+      return `/api/proxy/google-drive?id=${fileId}`;
+    }
+  }
+
+  return url;
 }
 
 export function createGoogleDriveAuthUrl(origin: string) {
