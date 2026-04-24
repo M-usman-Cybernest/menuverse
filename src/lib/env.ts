@@ -27,6 +27,7 @@ export const env = {
     process.env.GOOGLE_DRIVE_CLIENT_SECRET?.trim() ?? "",
   googleDriveRedirectUri: process.env.GOOGLE_DRIVE_REDIRECT_URI?.trim() ?? "",
   googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ?? "",
+  siteName: getEnvValue(process.env.NEXT_PUBLIC_SITE_NAME, "MenuVerse"),
 };
 
 export function isDatabaseConfigured() {

@@ -1,18 +1,14 @@
-import { PublicRestaurantPage } from "@/components/public/public-restaurant-page";
-import { getDefaultRestaurantDataset } from "@/lib/menuverse-data";
+import { LandingPage } from "@/components/public/landing-page";
 import { getOptionalSession } from "@/lib/session";
+import { env } from "@/lib/env";
 
 export default async function HomePage() {
-  const [dataset, session] = await Promise.all([
-    getDefaultRestaurantDataset(),
-    getOptionalSession(),
-  ]);
+  const session = await getOptionalSession();
 
   return (
-    <PublicRestaurantPage
+    <LandingPage
+      siteName={env.siteName || "MenuVerse"}
       authenticated={Boolean(session)}
-      initialDataset={dataset}
-      publicPath="/"
     />
   );
 }

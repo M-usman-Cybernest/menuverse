@@ -70,12 +70,6 @@ export function QrCodeTile({
             </div>
           )}
         </div>
-        <Button asChild variant="outline">
-          <a download={`${downloadName}.png`} href={dataUrl || undefined}>
-            <Download className="h-4 w-4" />
-            Download PNG
-          </a>
-        </Button>
       </CardContent>
     </Card>
   );

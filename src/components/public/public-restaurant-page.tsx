@@ -234,7 +234,7 @@ export function PublicRestaurantPage({
               <div className="space-y-3">
                 <div className="flex items-center gap-6">
                   {initialDataset.restaurant.logoUrl && (
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                       <Image
                         alt={initialDataset.restaurant.name}
                         className="object-contain p-2"
@@ -318,7 +318,7 @@ export function PublicRestaurantPage({
                   {category.description}
                 </h2>
               </div>
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2">
                 {items.map((item) => (
                   <motion.div
                     key={item.id}
@@ -329,71 +329,72 @@ export function PublicRestaurantPage({
                     whileHover={{ y: -4 }}
                     whileInView={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="flex h-full flex-col overflow-hidden rounded-[1.4rem] border-[#e8dccb] bg-white">
-                      <div className="relative aspect-[4/3] overflow-hidden">
-                        <Image
-                          alt={item.name}
-                          className="object-cover"
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          src={item.imageUrl}
-                        />
-                        {hasArAsset(item) ? (
-                          <div className="absolute right-3 top-3">
-                            <Badge className="bg-[#0f766e] text-white shadow-lg">
-                              <Move3D className="mr-1 h-3 w-3" />
-                              AR Ready
-                            </Badge>
-                          </div>
-                        ) : null}
-                      </div>
-                      <CardContent className="flex flex-1 flex-col p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <h3 className="text-lg font-semibold tracking-tight text-[#111827] xl:text-xl">
-                              {item.name}
-                            </h3>
-                            <p className="text-sm text-[#6b7280]">{item.prepTime}</p>
-                          </div>
-                          <p className="text-lg font-semibold text-[#111827]">
-                            {formatPrice(item.price)}
+                    <Card className="flex min-h-[180px] h-full flex-row overflow-hidden rounded-xl border-[#e8dccb] bg-white hover:shadow-md transition-shadow">
+                      <CardContent className="flex flex-1 flex-col p-4 sm:p-6">
+                        <div className="space-y-1">
+                          <h3 className="text-lg font-bold tracking-tight text-[#111827] sm:text-xl">
+                            {item.name}
+                          </h3>
+                          <p className="text-base font-semibold text-[#0f766e]">
+                            from {formatPrice(item.price)}
                           </p>
                         </div>
-                        <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#4b5563]">
-                          {item.description || "No description added yet."}
+                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b7280]">
+                          {item.description || "Freshly prepared for you."}
                         </p>
-                        <div className="mt-4 flex min-h-11 flex-wrap gap-2">
-                          {item.dietaryTags.map((tag) => (
+                        
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {item.dietaryTags.slice(0, 2).map((tag) => (
                             <Badge
                               key={tag}
-                              variant={tag === "AR Ready" ? "accent" : "default"}
+                              className="text-[10px] px-2 py-0"
                             >
                               {tag}
                             </Badge>
                           ))}
                         </div>
-                        <div className="mt-auto flex flex-col gap-2 pt-5 sm:flex-row">
+
+                        <div className="mt-auto flex gap-2 pt-4">
                           <Button
-                            className="w-full sm:flex-1"
+                            className="h-10 w-10 rounded-full border-[#e8dccb] p-0"
                             onClick={() => setActiveItemModalId(item.id)}
                             type="button"
                             variant="outline"
+                            title="View Item"
                           >
-                            <Eye className="h-4 w-4" />
-                            View Item
+                            <Eye className="h-5 w-5 text-[#111827]" />
                           </Button>
                           {hasArAsset(item) ? (
                             <Button
-                              className="w-full bg-[#0f766e] text-white hover:bg-[#0d6b63] sm:flex-1"
+                              className="h-10 w-10 rounded-full bg-[#0f766e] p-0 text-white hover:bg-[#0d6b63]"
                               onClick={() => openArViewer(item.id)}
                               type="button"
+                              title="View in AR"
                             >
-                              <Move3D className="h-4 w-4" />
-                              View 3D Model
+                              <Move3D className="h-5 w-5" />
                             </Button>
                           ) : null}
                         </div>
                       </CardContent>
+
+                      <div className="flex w-1/3 items-center justify-center p-2 sm:w-2/5 sm:p-4">
+                        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[#f8f9fa]">
+                          <Image
+                            alt={item.name}
+                            className="object-cover"
+                            fill
+                            sizes="(max-width: 768px) 33vw, 20vw"
+                            src={item.imageUrl}
+                          />
+                          {hasArAsset(item) && (
+                            <div className="absolute right-2 top-2">
+                              <div className="rounded-xl bg-[#0f766e] p-1 text-white shadow-lg">
+                                <Move3D className="h-3 w-3" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </Card>
                   </motion.div>
                 ))}
@@ -411,7 +412,7 @@ export function PublicRestaurantPage({
               <div className="grid gap-3">
                 {initialDataset.restaurant.timings.map((timing) => (
                   <div
-                    className="flex items-center justify-between rounded-lg border border-[#e7dfd2] bg-white px-4 py-3"
+                    className="flex items-center justify-between rounded-xl border border-[#e7dfd2] bg-white px-4 py-3"
                     key={timing.day}
                   >
                     <p className="font-medium text-[#111827]">{timing.day}</p>
@@ -466,90 +467,69 @@ export function PublicRestaurantPage({
         title={activeModalItem?.name}
       >
         {activeModalItem ? (
-          <div className="space-y-5">
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-[#ece4d8] bg-[#fffaf2]">
-              <Image
-                alt={activeModalItem.name}
-                className="object-cover"
-                fill
-                sizes="100vw"
-                src={activeModalItem.imageUrl}
-              />
-            </div>
+          <div className="flex flex-col gap-6 md:flex-row">
+            <div className="flex-1 space-y-5">
+              <div className="flex flex-wrap gap-2">
+                {activeModalItem.dietaryTags.map((tag) => (
+                  <Badge key={tag} className="rounded-lg">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
 
-            {hasArAsset(activeModalItem) ? (
-              <div className="space-y-3">
+              <p className="text-base leading-relaxed text-[#4b5563]">
+                {activeModalItem.description || "No description provided."}
+              </p>
+
+              <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-[#111827]">
-                      Product 3D preview
+                      Pricing & Availability
                     </p>
-                    <p className="text-sm text-[#6b7280]">
-                      This dialog now renders the selected item&apos;s own 3D model.
+                    <p className="text-xs text-[#6b7280]">
+                      Preparation: {activeModalItem.prepTime}
                     </p>
                   </div>
-                  <Badge variant="accent">Interactive</Badge>
-                </div>
-                <div className="min-h-[320px] overflow-hidden rounded-2xl border border-[#ece4d8] bg-white">
-                  <ModelViewerElement item={activeModalItem} key={activeModalItem.id} />
-                </div>
-              </div>
-            ) : null}
-
-            <div className="flex flex-wrap gap-2">
-              {activeModalItem.dietaryTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={tag === "AR Ready" ? "accent" : "default"}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-
-            <p className="text-base leading-7 text-[#4b5563]">
-              {activeModalItem.description}
-            </p>
-
-            <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[#111827]">
-                    Particular item details
-                  </p>
-                  <p className="text-sm text-[#6b7280]">
-                    This modal highlights the selected card item on the public home
-                    page.
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-[#6b7280]">Price</p>
-                  <p className="text-xl font-semibold text-[#111827]">
-                    {formatPrice(activeModalItem.price)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-[#0f766e]">
+                      {formatPrice(activeModalItem.price)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap gap-2">
-              {hasArAsset(activeModalItem) ? (
+              <div className="flex flex-wrap gap-3 pt-2">
+                {hasArAsset(activeModalItem) ? (
+                  <Button
+                    className="bg-[#0f766e] text-white hover:bg-[#0d6b63]"
+                    onClick={() => openArViewer(activeModalItem.id)}
+                    type="button"
+                  >
+                    <Move3D className="mr-2 h-4 w-4" />
+                    Launch AR
+                  </Button>
+                ) : null}
                 <Button
-                  onClick={() => {
-                    openArViewer(activeModalItem.id);
-                  }}
+                  onClick={() => setActiveItemModalId("")}
                   type="button"
+                  variant="outline"
                 >
-                  <Move3D className="h-4 w-4" />
-                  View 3D Model
+                  Back to Menu
                 </Button>
-              ) : null}
-              <Button
-                onClick={() => setActiveItemModalId("")}
-                type="button"
-                variant="outline"
-              >
-                Close
-              </Button>
+              </div>
+            </div>
+
+            <div className="w-full md:w-2/5">
+              <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#ece4d8] bg-[#fffaf2]">
+                <Image
+                  alt={activeModalItem.name}
+                  className="object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 40vw"
+                  src={activeModalItem.imageUrl}
+                />
+              </div>
             </div>
           </div>
         ) : null}

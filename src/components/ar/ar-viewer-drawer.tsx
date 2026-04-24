@@ -1,15 +1,15 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Move3D, X } from "lucide-react";
+import { Move3D } from "lucide-react";
+import Image from "next/image";
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 
 import { ModelViewerElement } from "@/components/ar/model-viewer-element";
-import { QrCodeTile } from "@/components/qr/qr-code-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
 import type { MenuItem } from "@/lib/types";
-import { formatPrice } from "@/lib/utils";
 
 type ArViewerDrawerProps = {
   item: MenuItem | null;
@@ -23,81 +23,101 @@ export function ArViewerDrawer({
   item,
   open,
   qrValue,
-  restaurantName,
   onClose,
 }: ArViewerDrawerProps) {
+  const [qrDataUrl, setQrDataUrl] = useState("");
+
+  useEffect(() => {
+    if (open && qrValue) {
+      void QRCode.toDataURL(qrValue, {
+        width: 400,
+        margin: 1,
+        color: {
+          dark: "#0c0c0cff",
+          light: "#ffffff",
+        },
+      }).then(setQrDataUrl);
+    }
+  }, [open, qrValue]);
+
+  if (!item) return null;
+
   return (
-    <AnimatePresence>
-      {open && item ? (
-        <motion.div
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 z-50 bg-[#111827]/55 p-4 backdrop-blur-sm"
-          exit={{ opacity: 0 }}
-          initial={{ opacity: 0 }}
-          onClick={onClose}
-        >
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-[#fcfaf7] shadow-[0_32px_80px_-28px_rgba(17,24,39,0.5)]"
-            exit={{ opacity: 0, y: 20 }}
-            initial={{ opacity: 0, y: 24 }}
-            onClick={(event) => event.stopPropagation()}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          >
-            <div className="flex items-start justify-between border-b border-[#e5dccf] px-5 py-4">
-              <div className="space-y-2">
-                <Badge variant="accent">AR Session</Badge>
-                <div>
-                  <h2 className="text-xl font-semibold text-[#111827]">{item.name}</h2>
-                  <p className="text-sm text-[#6b7280]">
-                    {restaurantName} · {formatPrice(item.price)}
-                  </p>
-                </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={item.name}
+      description="3D Experience & AR Preview"
+      maxWidth="max-w-4xl"
+    >
+      <div className="flex flex-col gap-8 md:flex-row">
+        <div className="flex-1 space-y-6">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold uppercase tracking-wider text-[#0f766e]">
+              Tableside Preview
+            </p>
+            <p className="text-base leading-relaxed text-[#4b5563]">
+              {item.description || "Explore this dish in 3D before you order."}
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {item.dietaryTags.map((tag) => (
+                <Badge key={tag} className="rounded-xl bg-[#f2ede2] text-[#4b5563] hover:bg-[#e8dfcf]">{tag}</Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-5">
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex-1 space-y-3">
+                <p className="text-md font-semibold text-[#111827]">
+                  AR Discovery
+                </p>
+                <p className="text-sm leading-relaxed text-[#6b7280]">
+                  Scan the QR code to view this item in your own space, 
+                  or interact with the 3D model on the right.
+                </p>
+
               </div>
-              <Button onClick={onClose} size="icon" variant="ghost">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close AR view</span>
+              <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-[#ece4d8] bg-white p-2 shadow-sm sm:h-36 sm:w-36">
+                {qrDataUrl ? (
+                  <Image
+                    src={qrDataUrl}
+                    alt="AR QR Code"
+                    width={144}
+                    height={144}
+                    className="h-full w-full object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-50 text-[10px] text-gray-400">
+                    Generating...
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            {item.arModelIosUrl && (
+              <Button asChild variant="outline" className="rounded-xl">
+                <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
+                  <Move3D className="mr-2 h-4 w-4" />
+                  iOS View
+                </a>
               </Button>
-            </div>
-            <div className="grid flex-1 gap-4 overflow-y-auto p-4 lg:grid-cols-[1.5fr_0.9fr]">
-              <div className="min-h-[340px] overflow-hidden rounded-lg border border-[#e5dccf] bg-white">
-                <ModelViewerElement item={item} key={item.id} />
-              </div>
-              <div className="flex flex-col gap-4">
-                <Card>
-                  <CardContent className="space-y-4 p-5">
-                    <div className="flex items-center gap-2 text-[#0f766e]">
-                      <Move3D className="h-4 w-4" />
-                      <p className="text-sm font-semibold">Tableside Preview</p>
-                    </div>
-                    <p className="text-sm leading-6 text-[#4b5563]">
-                      {item.description || "Explore this dish in 3D before you order."}
-                    </p>
-                    {item.arModelIosUrl ? (
-                      <Button asChild size="sm" variant="outline">
-                        <a href={item.arModelIosUrl} rel="noreferrer" target="_blank">
-                          Open iOS Model
-                        </a>
-                      </Button>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      {item.dietaryTags.map((tag) => (
-                        <Badge key={tag}>{tag}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                <QrCodeTile
-                  description="Direct-to-dish QR for table tents, counters, and takeaway sleeves."
-                  downloadName={`${item.id}-qr`}
-                  title="Item QR"
-                  value={qrValue}
-                />
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+            )}
+            <Button onClick={onClose} className="rounded-xl bg-[#111827] text-white hover:bg-black">
+              Close Preview
+            </Button>
+          </div>
+        </div>
+
+        <div className="w-full md:w-[35%]">
+          <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#ece4d8] bg-white shadow-inner">
+            <ModelViewerElement item={item} key={item.id} />
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
