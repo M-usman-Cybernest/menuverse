@@ -134,12 +134,18 @@ export function resolveDriveUrl(
 }
 
 export function createGoogleDriveAuthUrl(origin: string) {
+  const redirectUri = env.googleDriveRedirectUri;
+
+  if (!redirectUri) {
+    throw new Error("Missing GOOGLE_DRIVE_REDIRECT_URI");
+  }
+
   const params = new URLSearchParams({
     access_type: "offline",
     client_id: env.googleDriveClientId,
     include_granted_scopes: "true",
     prompt: "consent",
-    redirect_uri: env.googleDriveRedirectUri,
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: GOOGLE_DRIVE_SCOPE,
     state: encodeGoogleDriveState({ origin }),
@@ -147,20 +153,23 @@ export function createGoogleDriveAuthUrl(origin: string) {
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
-
 export async function exchangeGoogleDriveCode(code: string) {
+  if (!env.googleDriveRedirectUri) {
+    throw new Error("Missing GOOGLE_DRIVE_REDIRECT_URI");
+  }
+
   const response = await fetch(GOOGLE_DRIVE_TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
     body: new URLSearchParams({
       client_id: env.googleDriveClientId,
       client_secret: env.googleDriveClientSecret,
       code,
       grant_type: "authorization_code",
-      redirect_uri: env.googleDriveRedirectUri,
+      redirect_uri: env.googleDriveRedirectUri.trim(),
     }),
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    method: "POST",
   });
 
   return parseGoogleDriveTokenResponse(response);
