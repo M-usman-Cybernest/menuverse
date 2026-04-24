@@ -102,6 +102,15 @@ export function PublicRestaurantPage({
     setIsMobileDevice(isTouchMobile);
   }, []);
 
+  useEffect(() => {
+    const itemParam = searchParams.get("item");
+    const arParam = searchParams.get("ar");
+
+    if (itemParam && arParam === "true") {
+      openArViewer(itemParam);
+    }
+  }, [searchParams, isMobileDevice]);
+
   if (!initialDataset) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#fcfaf7] px-4 text-center">
@@ -539,8 +548,11 @@ export function PublicRestaurantPage({
         item={activeItem}
         onClose={closeArViewer}
         open={Boolean(activeItem)}
-        qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}`}
+        qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}&ar=true`}
         restaurantName={initialDataset.restaurant.name}
+        onLaunchAr={() => activeItem && openNativeAr(activeItem)}
+        isMobile={isMobileDevice}
+        isDirectScan={searchParams.get("ar") === "true"}
       />
     </>
   );
