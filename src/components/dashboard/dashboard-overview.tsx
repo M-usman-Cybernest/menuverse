@@ -35,11 +35,6 @@ export function DashboardOverview() {
           value={items.length.toString()}
         />
         <MetricCard
-          icon={<Move3D className="h-4 w-4" />}
-          title="AR Ready"
-          value={arReady.length.toString()}
-        />
-        <MetricCard
           icon={<QrCode className="h-4 w-4" />}
           title="QR Surfaces"
           value={featured ? "2" : "1"}

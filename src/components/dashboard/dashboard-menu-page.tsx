@@ -721,7 +721,6 @@ export function DashboardMenuPage() {
                             <Badge
                               key={tag}
                               className="text-[10px]"
-                              variant={tag === "AR Ready" ? "accent" : "default"}
                             >
                               {tag}
                             </Badge>

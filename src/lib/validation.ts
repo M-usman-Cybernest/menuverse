@@ -79,7 +79,12 @@ const itemSchema = z.object({
   imageUrl: z.string().trim().min(1),
   arModelUrl: z.string().trim().optional(),
   arModelIosUrl: z.string().trim().optional(),
-  dietaryTags: z.array(z.enum(DIETARY_TAGS)),
+  dietaryTags: z
+    .array(z.string())
+    .transform((tags) =>
+      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag))
+    )
+    .default([]),
   prepTime: z.string().trim().min(1),
   featured: z.boolean().optional(),
   qrCodeUrl: z.string().trim().optional(),
@@ -99,7 +104,12 @@ const itemInputSchema = z.object({
   imageUrl: z.string().trim().optional(),
   arModelUrl: z.string().trim().optional(),
   arModelIosUrl: z.string().trim().optional(),
-  dietaryTags: z.array(z.enum(DIETARY_TAGS)).optional(),
+  dietaryTags: z
+    .array(z.string())
+    .transform((tags) =>
+      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag))
+    )
+    .optional(),
   prepTime: z.string().trim().optional(),
   featured: z.boolean().optional(),
 });

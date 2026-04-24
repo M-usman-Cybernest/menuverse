@@ -7,7 +7,6 @@ export const DIETARY_TAGS = [
   "Halal",
   "Spicy",
   "Chef's Pick",
-  "AR Ready",
   "New",
 ] as const satisfies readonly DietaryTag[];
 

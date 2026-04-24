@@ -282,7 +282,6 @@ export function DashboardQrPage() {
                     {item ? (
                       <p className="mb-3 text-xs text-[#0f766e]">
                         {formatPrice(item.price)}
-                        {item.arModelUrl ? " · AR Ready" : ""}
                       </p>
                     ) : null}
                     <Button

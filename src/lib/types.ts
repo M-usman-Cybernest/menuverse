@@ -8,7 +8,6 @@ export type DietaryTag =
   | "Halal"
   | "Spicy"
   | "Chef's Pick"
-  | "AR Ready"
   | "New";
 
 export type DayOfWeek =

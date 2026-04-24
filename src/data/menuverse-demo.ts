@@ -88,7 +88,7 @@ export const menuverseDemo: RestaurantDataset = {
       price: 18,
       imageUrl: "/images/citrus-salad.jpg",
       arModelUrl: "/models/avocado.glb",
-      dietaryTags: ["Chef's Pick", "AR Ready", "Vegetarian"],
+      dietaryTags: ["Chef's Pick", "Vegetarian"],
       prepTime: "8 min",
       featured: true,
     },
