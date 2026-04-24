@@ -152,11 +152,6 @@ export function PublicRestaurantPage({
 
     setActiveItemModalId("");
 
-    if (isMobileDevice) {
-      openNativeAr(item);
-      return;
-    }
-
     if (!isDesktop) {
       setManualArItemId(itemId);
     }
@@ -183,7 +178,7 @@ export function PublicRestaurantPage({
       const fallbackUrl = `${window.location.origin}${publicPath}?item=${item.id}`;
       const intentUrl =
         `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(modelUrl)}` +
-        `&mode=ar_preferred&title=${encodeURIComponent(item.name)}` +
+        `&mode=ar_preferred&title=${encodeURIComponent(item.name)}&link=${encodeURIComponent(fallbackUrl)}&resizable=false` +
         `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;` +
         `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
 
