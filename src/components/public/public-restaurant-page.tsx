@@ -102,15 +102,6 @@ export function PublicRestaurantPage({
     setIsMobileDevice(isTouchMobile);
   }, []);
 
-  useEffect(() => {
-    const itemParam = searchParams.get("item");
-    const arParam = searchParams.get("ar");
-
-    if (itemParam && arParam === "true") {
-      openArViewer(itemParam);
-    }
-  }, [searchParams, isMobileDevice]);
-
   if (!initialDataset) {
     return (
       <main className="grid min-h-screen place-items-center bg-[#fcfaf7] px-4 text-center">
@@ -152,6 +143,11 @@ export function PublicRestaurantPage({
 
     setActiveItemModalId("");
 
+    if (isMobileDevice) {
+      openNativeAr(item);
+      return;
+    }
+
     if (!isDesktop) {
       setManualArItemId(itemId);
     }
@@ -178,7 +174,7 @@ export function PublicRestaurantPage({
       const fallbackUrl = `${window.location.origin}${publicPath}?item=${item.id}`;
       const intentUrl =
         `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(modelUrl)}` +
-        `&mode=ar_preferred&title=${encodeURIComponent(item.name)}&link=${encodeURIComponent(fallbackUrl)}&resizable=false` +
+        `&mode=ar_preferred&title=${encodeURIComponent(item.name)}` +
         `#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;` +
         `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`;
 
@@ -346,7 +342,7 @@ export function PublicRestaurantPage({
                         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b7280]">
                           {item.description || "Freshly prepared for you."}
                         </p>
-                        
+
                         <div className="mt-4 flex flex-wrap gap-2">
                           {item.dietaryTags.slice(0, 2).map((tag) => (
                             <Badge
@@ -543,11 +539,8 @@ export function PublicRestaurantPage({
         item={activeItem}
         onClose={closeArViewer}
         open={Boolean(activeItem)}
-        qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}&ar=true`}
+        qrValue={`${qrBaseValue}?item=${activeItem?.id ?? ""}`}
         restaurantName={initialDataset.restaurant.name}
-        onLaunchAr={() => activeItem && openNativeAr(activeItem)}
-        isMobile={isMobileDevice}
-        isDirectScan={searchParams.get("ar") === "true"}
       />
     </>
   );
