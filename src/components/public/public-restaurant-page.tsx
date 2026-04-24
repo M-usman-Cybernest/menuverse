@@ -205,11 +205,8 @@ export function PublicRestaurantPage({
             src={initialDataset.restaurant.coverImageUrl}
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.16),rgba(17,24,39,0.88))]" />
-          <div className="relative mx-auto flex min-h-[78vh] max-w-7xl flex-col justify-between gap-12 px-4 py-5 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Badge className="bg-white/10 text-white" variant="dark">
-                {initialDataset.restaurant.cuisineLabel}
-              </Badge>
+          <div className="relative mx-auto flex min-h-[35vh] max-w-7xl flex-col justify-between gap-12 px-4 py-5 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-end gap-3">
               <div className="flex gap-2">
                 {authenticated ? (
                   <Button asChild size="sm" variant="secondary">
@@ -235,9 +232,22 @@ export function PublicRestaurantPage({
 
             <div className="max-w-3xl space-y-5">
               <div className="space-y-3">
-                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                  {initialDataset.restaurant.name}
-                </h1>
+                <div className="flex items-center gap-6">
+                  {initialDataset.restaurant.logoUrl && (
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl">
+                      <Image
+                        alt={initialDataset.restaurant.name}
+                        className="object-contain p-2"
+                        fill
+                        sizes="80px"
+                        src={initialDataset.restaurant.logoUrl}
+                      />
+                    </div>
+                  )}
+                  <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+                    {initialDataset.restaurant.name}
+                  </h1>
+                </div>
                 <p className="max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
                   {initialDataset.restaurant.description}
                 </p>
@@ -248,10 +258,10 @@ export function PublicRestaurantPage({
                   <Clock3 className="h-4 w-4" />
                   {todayTiming
                     ? formatTimeRange(
-                        todayTiming.open,
-                        todayTiming.close,
-                        todayTiming.closed,
-                      )
+                      todayTiming.open,
+                      todayTiming.close,
+                      todayTiming.closed,
+                    )
                     : "Hours available on request"}
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2">
