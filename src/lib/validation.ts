@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { DietaryTag } from "@/lib/types";
 
 import { DIETARY_TAGS, USER_ROLES, WEEK_DAYS } from "@/lib/constants";
 import {
@@ -82,7 +83,7 @@ const itemSchema = z.object({
   dietaryTags: z
     .array(z.string())
     .transform((tags) =>
-      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag))
+      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag)) as DietaryTag[]
     )
     .default([]),
   prepTime: z.string().trim().min(1),
@@ -107,7 +108,7 @@ const itemInputSchema = z.object({
   dietaryTags: z
     .array(z.string())
     .transform((tags) =>
-      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag))
+      tags.filter((tag) => (DIETARY_TAGS as readonly string[]).includes(tag)) as DietaryTag[]
     )
     .optional(),
   prepTime: z.string().trim().optional(),
