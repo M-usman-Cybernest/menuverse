@@ -251,32 +251,39 @@ export async function registerOwner(input: {
       ...restaurantData,
     });
 
-    await MenuCategoryModel.insertMany(
-      dataset.categories.map((category: MenuCategory) => ({
-          appId: category.id,
-          restaurantId,
-          name: category.name,
-          order: category.order,
-          description: category.description,
-        })),
-    );
-    await MenuItemModel.insertMany(
-      dataset.items.map((item: MenuItem) => ({
-        appId: item.id,
+    // Create a mapping of old hardcoded category IDs to new unique IDs
+    const categoryIdMap = new Map<string, string>();
+    const newCategories = dataset.categories.map((category: MenuCategory) => {
+      const newId = createId("category");
+      categoryIdMap.set(category.id, newId);
+      return {
+        appId: newId,
         restaurantId,
-        categoryId: item.categoryId,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        imageUrl: item.imageUrl,
-        arModelUrl: item.arModelUrl,
-        arModelIosUrl: item.arModelIosUrl,
-        qrCodeUrl: item.qrCodeUrl,
-        dietaryTags: item.dietaryTags,
-        prepTime: item.prepTime,
-        featured: item.featured,
-      })),
-    );
+        name: category.name,
+        order: category.order,
+        description: category.description,
+      };
+    });
+
+    await MenuCategoryModel.insertMany(newCategories);
+
+    const newItems = dataset.items.map((item: MenuItem) => ({
+      appId: createId("item"),
+      restaurantId,
+      categoryId: categoryIdMap.get(item.categoryId) || restaurantId, // Fallback if cat missing
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      imageUrl: item.imageUrl,
+      arModelUrl: item.arModelUrl,
+      arModelIosUrl: item.arModelIosUrl,
+      qrCodeUrl: item.qrCodeUrl,
+      dietaryTags: item.dietaryTags,
+      prepTime: item.prepTime,
+      featured: item.featured,
+    }));
+
+    await MenuItemModel.insertMany(newItems);
 
     return serializeUser({
       id: ownerRecord.appId,
@@ -305,13 +312,23 @@ export async function registerOwner(input: {
   dataset.restaurant.slug = slug;
   dataset.restaurant.ownerId = userId;
 
+  const categoryIdMap = new Map<string, string>();
+  const newCategories = dataset.categories.map((category: MenuCategory) => {
+    const newId = createId("category");
+    categoryIdMap.set(category.id, newId);
+    return { ...category, id: newId, restaurantId };
+  });
+
   state.users.push(ownerRecord);
   state.restaurants.push(dataset.restaurant);
-  state.categories.push(
-    ...dataset.categories.map((category: MenuCategory) => ({ ...category, restaurantId })),
-  );
+  state.categories.push(...newCategories);
   state.items.push(
-    ...dataset.items.map((item: MenuItem) => ({ ...item, restaurantId })),
+    ...dataset.items.map((item: MenuItem) => ({
+      ...item,
+      id: createId("item"),
+      restaurantId,
+      categoryId: categoryIdMap.get(item.categoryId) || restaurantId,
+    })),
   );
 
   return serializeUser(ownerRecord);
