@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import { useToast } from "@/components/ui/toast";
 
 import { API_DASHBOARD_RESTAURANT } from "@/lib/api-routes";
 import { DIETARY_TAGS, WEEK_DAYS } from "@/lib/constants";
@@ -163,12 +165,22 @@ export function DashboardProvider({
   children: React.ReactNode;
   initialBundle: DashboardBundle;
 }) {
+  const toast = useToast();
   const [bundle, setBundle] = useState<DashboardBundle>(() =>
     createDefaultRestaurantBundle(initialBundle),
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+
+  // Fire toasts automatically when saveSuccess or saveError change
+  useEffect(() => {
+    if (saveSuccess) toast.success(saveSuccess);
+  }, [saveSuccess]);
+
+  useEffect(() => {
+    if (saveError) toast.error(saveError);
+  }, [saveError]);
 
   const restaurant = bundle.restaurant;
   const categories = useMemo(

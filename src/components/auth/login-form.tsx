@@ -8,15 +8,44 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast";
+
+type FieldErrors = {
+  email?: string;
+  password?: string;
+};
 
 export function LoginForm() {
   const router = useRouter();
+  const { success: toastSuccess } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  function validate(): boolean {
+    const errors: FieldErrors = {};
+
+    if (!email.trim()) {
+      errors.email = "Email is required.";
+    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
+      errors.email = "Please enter a valid email address.";
+    }
+
+    if (!password.trim()) {
+      errors.password = "Password is required.";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
 
   async function submit() {
+    if (!validate()) return;
+
     setSubmitting(true);
     setError("");
 
@@ -36,6 +65,7 @@ export function LoginForm() {
       return;
     }
 
+    toastSuccess("Signed in successfully!");
     router.push("/dashboard");
     router.refresh();
   }
@@ -60,14 +90,25 @@ export function LoginForm() {
           void submit();
         }}
       >
-        <Field label="Email">
-          <Input value={email} onChange={(event) => setEmail(event.target.value)} />
+        <Field label="Email" error={fieldErrors.email}>
+          <Input
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+            }}
+            className={fieldErrors.email ? "border-red-400 focus:border-red-500 focus:ring-red-500/15" : ""}
+          />
         </Field>
-        <Field label="Password">
+        <Field label="Password" error={fieldErrors.password}>
           <Input
             type="password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));
+            }}
+            className={fieldErrors.password ? "border-red-400 focus:border-red-500 focus:ring-red-500/15" : ""}
           />
         </Field>
         {error ? (
@@ -86,14 +127,19 @@ export function LoginForm() {
 function Field({
   children,
   label,
+  error,
 }: {
   children: React.ReactNode;
   label: string;
+  error?: string;
 }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-medium text-[#374151]">{label}</span>
       {children}
+      {error && (
+        <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>
+      )}
     </label>
   );
 }
