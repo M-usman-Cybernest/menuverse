@@ -66,8 +66,9 @@ export async function POST(request: Request) {
 }
 
 async function handleGoogleDriveCallback(searchParams: URLSearchParams) {
-  const popupOrigin =
-    decodeGoogleDriveState(searchParams.get("state"))?.origin ?? "*";
+  const state = decodeGoogleDriveState(searchParams.get("state"));
+  const popupOrigin = state?.origin ?? "*";
+  const redirectUri = state?.redirectUri;
 
   if (!isGoogleDriveConfigured()) {
     return new Response(
@@ -120,11 +121,11 @@ async function handleGoogleDriveCallback(searchParams: URLSearchParams) {
 
   const code = searchParams.get("code");
 
-  if (!code) {
+  if (!code || !redirectUri) {
     return new Response(
       renderGoogleDriveAuthPage(
         false,
-        "Google Drive did not return an authorization code.",
+        "Google Drive did not return a valid authorization state.",
         popupOrigin,
       ),
       {
@@ -136,7 +137,7 @@ async function handleGoogleDriveCallback(searchParams: URLSearchParams) {
   }
 
   try {
-    const driveSession = await exchangeGoogleDriveCode(code);
+    const driveSession = await exchangeGoogleDriveCode(code, redirectUri);
     const cookieStore = await cookies();
 
     cookieStore.set(

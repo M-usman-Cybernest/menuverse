@@ -25,7 +25,6 @@ export const env = {
   googleDriveClientId: process.env.GOOGLE_DRIVE_CLIENT_ID?.trim() ?? "",
   googleDriveClientSecret:
     process.env.GOOGLE_DRIVE_CLIENT_SECRET?.trim() ?? "",
-  googleDriveRedirectUri: process.env.GOOGLE_DRIVE_REDIRECT_URI?.trim(),
   googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ?? "",
   siteName: getEnvValue(process.env.NEXT_PUBLIC_SITE_NAME, "MenuVerse"),
 };
@@ -42,9 +41,6 @@ export function getMissingGoogleDriveEnvVars() {
   }
   if (!env.googleDriveClientSecret) {
     missing.push("GOOGLE_DRIVE_CLIENT_SECRET");
-  }
-  if (!env.googleDriveRedirectUri) {
-    missing.push("GOOGLE_DRIVE_REDIRECT_URI");
   }
   if (!env.googleDriveFolderId) {
     missing.push("GOOGLE_DRIVE_FOLDER_ID");
