@@ -97,7 +97,7 @@ function createDefaultRestaurantBundle(bundle: DashboardBundle): DashboardBundle
       ownerId: bundle.currentUser.id,
       name: `${bundle.currentUser.name}'s Restaurant`,
       slug: slugify(bundle.currentUser.name) || "restaurant",
-      logoUrl: "/images/dessert.jpg",
+      logoUrl: "/images/logo.png",
       coverImageUrl: "/images/hero.jpg",
       description: "A new MenuVerse restaurant ready for setup.",
       heroNote: "Edit your story, timings, menu, and AR-ready items here.",

@@ -13,7 +13,7 @@ export const menuverseDemo: RestaurantDataset = {
     ownerId: "user_luna_owner",
     name: "Luna Table",
     slug: "luna-table",
-    logoUrl: "/images/dessert.jpg",
+    logoUrl: "/images/logo.png",
     coverImageUrl: "/images/hero.jpg",
     description:
       "A warm, modern bistro built for phone-first ordering, rich plating, and tableside wow moments.",
