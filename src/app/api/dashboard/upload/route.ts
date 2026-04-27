@@ -32,7 +32,7 @@ const ALLOWED_MODEL_TYPES = [
 
 const ALL_ALLOWED_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_MODEL_TYPES];
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 export async function POST(request: Request) {
   const session = await getOptionalSession();
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { message: "File too large. Maximum size is 50MB." },
+        { message: "File too large. Maximum size is 20MB." },
         { status: 400 },
       );
     }

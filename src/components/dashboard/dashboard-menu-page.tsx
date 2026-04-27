@@ -2,6 +2,7 @@
 
 import {
   ImagePlus,
+  Info,
   Layers3,
   Package,
   Pencil,
@@ -226,6 +227,12 @@ export function DashboardMenuPage() {
 
       const setter = type === "image" ? setUploading : setUploadingModel;
       const errorSetter = type === "image" ? setImageError : setModelError;
+
+      const maxSize = 20 * 1024 * 1024; // 20 MB
+      if (file.size > maxSize) {
+        errorSetter("File is too large. Maximum file size is 20MB.");
+        return;
+      }
 
       setter(true);
       errorSetter("");
@@ -974,14 +981,12 @@ function ModelAssetField({
   error?: string;
 }) {
   return (
-    <Field label="3D Model">
+    <Field 
+      label="3D Model" 
+      infoText={"Upload a 3D model to Google Drive. `.glb` and `.gltf` files are saved for Android/Web viewers, while `.usdz` files are saved for iPhone and iPad Quick Look.\n\n⚠️ Files more than 20MB cannot be uploaded."}
+    >
       <div className="flex flex-col gap-2 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
         {children}
-        <p className="text-sm leading-6 text-[#4b5563]">
-          Upload a 3D model to Google Drive. `.glb` and `.gltf` files are
-          saved for Android/Web viewers, while `.usdz` files are saved for iPhone
-          and iPad Quick Look.
-        </p>
         <div className="flex flex-wrap gap-2">
           {androidUrl ? (
             <Badge className="w-fit" variant="accent">
@@ -1038,16 +1043,27 @@ function Field({
   children,
   className,
   label,
+  infoText,
 }: {
   children: React.ReactNode;
   className?: string;
   label: string;
+  infoText?: string;
 }) {
   return (
-    <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-[#374151]">
+    <label className={`block ${className || ""}`}>
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[#374151]">
         {label}
-      </span>
+        {infoText && (
+          <div className="group relative flex items-center">
+            <Info className="h-4 w-4 text-[#6b7280] transition-colors hover:text-[#0f766e]" />
+            <div className="invisible absolute bottom-full left-[-10px] z-10 mb-2 w-[280px] rounded-lg bg-gray-900 p-3 text-xs font-normal leading-relaxed text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 sm:w-80 whitespace-pre-wrap">
+              {infoText}
+              <div className="absolute left-[18px] top-full -mt-px border-4 border-transparent border-t-gray-900" />
+            </div>
+          </div>
+        )}
+      </div>
       {children}
     </label>
   );
