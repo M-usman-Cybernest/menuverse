@@ -6,7 +6,6 @@ import {
   Package,
   Pencil,
   Plus,
-  RefreshCw,
   Save,
   Trash2,
   Upload,
@@ -18,8 +17,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import {
   API_DASHBOARD_UPLOAD,
-  API_GOOGLE_CALLBACK,
-  API_GOOGLE_FILES,
   API_GOOGLE_STATUS,
 } from "@/lib/api-routes";
 import { Badge } from "@/components/ui/badge";
@@ -34,10 +31,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
-import type { ExternalStorageProvider, ItemAssetTarget } from "@/lib/storage";
-import { hasArAsset } from "@/lib/storage";
-import { formatPrice } from "@/lib/utils";
-
 const GOOGLE_CONNECT_PAGE = "/dashboard/google-connect";
 
 type CategoryForm = { name: string; description: string };
@@ -50,44 +43,6 @@ type ItemForm = {
   arModelIosUrl: string;
   categoryId: string;
 };
-
-type UploadMode = "local" | "google-drive";
-type UploadKind = "image" | "model";
-type GoogleDriveAsset = {
-  createdTime?: string;
-  id: string;
-  mimeType: string;
-  name: string;
-  previewUrl: string;
-  target: ItemAssetTarget;
-  thumbnailUrl: string | null;
-  url: string;
-};
-type GoogleDriveStatusResponse = {
-  configured: boolean;
-  connected: boolean;
-  message?: string;
-};
-
-const EMPTY_CATEGORY: CategoryForm = { name: "", description: "" };
-const EMPTY_ITEM: ItemForm = {
-  name: "",
-  description: "",
-  price: 0,
-  imageUrl: "",
-  arModelUrl: "",
-  arModelIosUrl: "",
-  categoryId: "",
-};
-
-const STORAGE_PROVIDER_OPTIONS: Array<{
-  label: string;
-  value: ExternalStorageProvider;
-}> = [
-  { label: "UploadThing", value: "uploadthing" },
-  { label: "Google Drive", value: "google-drive" },
-  { label: "Direct URL", value: "direct-url" },
-];
 
 export function DashboardMenuPage() {
   const router = useRouter();
@@ -110,38 +65,11 @@ export function DashboardMenuPage() {
   const [catForm, setCatForm] = useState<CategoryForm>(EMPTY_CATEGORY);
   const [editCatId, setEditCatId] = useState<string | null>(null);
 
-  const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
-  const [editItemId, setEditItemId] = useState<string | null>(null);
-
-  const [storageModalOpen, setStorageModalOpen] = useState(false);
-  const [storageTarget, setStorageTarget] = useState<ItemAssetTarget>("imageUrl");
-  const [storageProvider, setStorageProvider] =
-    useState<ExternalStorageProvider>("uploadthing");
-  const [storageUrl, setStorageUrl] = useState("");
-  const [storageError, setStorageError] = useState("");
-
-  const [driveBrowserOpen, setDriveBrowserOpen] = useState(false);
-  const [driveAssets, setDriveAssets] = useState<GoogleDriveAsset[]>([]);
-  const [driveError, setDriveError] = useState("");
-  const [driveLoading, setDriveLoading] = useState(false);
-  const [driveNeedsAuth, setDriveNeedsAuth] = useState(false);
-  const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
-  const [checkingGoogleDriveStatus, setCheckingGoogleDriveStatus] =
-    useState(true);
-  const [redirectingToGoogleConnect, setRedirectingToGoogleConnect] =
-    useState(false);
-
-  const [imageError, setImageError] = useState("");
-  const [modelError, setModelError] = useState("");
-
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
-  const imageUploadModeRef = useRef<UploadMode>("local");
-  const modelUploadModeRef = useRef<UploadMode>("local");
   const redirectTimeoutRef = useRef<number | null>(null);
 
   const [filterCategoryId, setFilterCategoryId] = useState<string>("all");
@@ -163,7 +91,7 @@ export function DashboardMenuPage() {
     try {
       const response = await fetch(API_GOOGLE_STATUS);
       const payload = (await response.json()) as
-        | GoogleDriveStatusResponse
+        | { configured: boolean; connected: boolean; message?: string }
         | { message?: string };
 
       if (!response.ok || !("connected" in payload)) {
@@ -196,50 +124,6 @@ export function DashboardMenuPage() {
       setCheckingGoogleDriveStatus(false);
     }
   }, []);
-
-  const loadGoogleDriveAssets = useCallback(
-    async (target: ItemAssetTarget) => {
-      setDriveLoading(true);
-      setDriveError("");
-      setStorageError("");
-
-      try {
-        const response = await fetch(
-          `${API_GOOGLE_FILES}?target=${encodeURIComponent(target)}`,
-        );
-        const payload = (await response.json()) as
-          | { assets: GoogleDriveAsset[] }
-          | { message?: string; needsAuth?: boolean };
-
-        if (!response.ok || !("assets" in payload)) {
-          if ("needsAuth" in payload && payload.needsAuth) {
-            setDriveNeedsAuth(true);
-          }
-
-          throw new Error(
-            "message" in payload && payload.message
-              ? payload.message
-              : "Could not read Google Drive files.",
-          );
-        }
-
-        setDriveAssets(payload.assets);
-        setDriveNeedsAuth(false);
-        setGoogleDriveConnected(true);
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Could not read Google Drive files.";
-        setDriveAssets([]);
-        setDriveError(message);
-        setStorageError(message);
-      } finally {
-        setDriveLoading(false);
-      }
-    },
-    [],
-  );
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -467,80 +351,6 @@ export function DashboardMenuPage() {
     if (success) {
       setItemModalOpen(false);
       setItemForm(EMPTY_ITEM);
-    }
-  }
-
-  function openStorageModal(target: ItemAssetTarget) {
-    setStorageTarget(target);
-    setStorageProvider(target === "imageUrl" ? "uploadthing" : "google-drive");
-    setStorageUrl(itemForm[target]);
-    setStorageError("");
-    setStorageModalOpen(true);
-  }
-
-  async function openDriveBrowser(target: ItemAssetTarget) {
-    if (
-      !ensureGoogleDriveConnected(
-        "Connect your Google account before browsing Drive files.",
-      )
-    ) {
-      return;
-    }
-
-    setStorageTarget(target);
-    setDriveBrowserOpen(true);
-    await loadGoogleDriveAssets(target);
-  }
-
-  async function applyStorageUrl() {
-    if (!storageUrl.trim()) {
-      setStorageError("Paste a hosted file URL first.");
-      return;
-    }
-
-    if (
-      storageProvider === "google-drive" &&
-      !ensureGoogleDriveConnected(
-        "Connect your Google account before attaching Drive files.",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setStorageError("");
-      const response = await fetch(API_GOOGLE_CALLBACK, {
-        body: JSON.stringify({
-          provider: storageProvider,
-          target: storageTarget,
-          url: storageUrl.trim(),
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
-
-      const payload = (await response.json()) as
-        | { asset: { target: ItemAssetTarget; url: string } }
-        | { message?: string };
-
-      if (!response.ok || !("asset" in payload)) {
-        throw new Error(
-          "message" in payload && payload.message
-            ? payload.message
-            : "Could not attach the asset.",
-        );
-      }
-
-      applyAssetToItem(payload.asset);
-      setStorageModalOpen(false);
-      setStorageUrl("");
-      setStorageError("");
-    } catch (error) {
-      setStorageError(
-        error instanceof Error ? error.message : "Could not attach the asset.",
-      );
     }
   }
 
@@ -959,7 +769,7 @@ export function DashboardMenuPage() {
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) {
-                      void uploadFile(file, "image", imageUploadModeRef.current);
+                      void uploadFile(file, "image", "google-drive");
                     }
                     event.target.value = "";
                   }}
@@ -970,55 +780,25 @@ export function DashboardMenuPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-4 py-6 text-sm text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
                   disabled={uploading}
                   onClick={() => {
-                    imageUploadModeRef.current = "local";
-                    imageInputRef.current?.click();
+                    if (
+                      ensureGoogleDriveConnected(
+                        "Connect your Google account before uploading images.",
+                      )
+                    ) {
+                      imageInputRef.current?.click();
+                    }
                   }}
                   type="button"
                 >
                   {uploading ? (
-                    <span className="animate-pulse">Uploading...</span>
+                    <span className="animate-pulse">Uploading to Google Drive...</span>
                   ) : (
                     <>
                       <ImagePlus className="h-5 w-5" />
-                      <span>Upload image to app</span>
+                      <span>Upload image to Google Drive</span>
                     </>
                   )}
                 </button>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => {
-                      if (
-                        ensureGoogleDriveConnected(
-                          "Connect your Google account before uploading images to Google Drive.",
-                        )
-                      ) {
-                        imageUploadModeRef.current = "google-drive";
-                        imageInputRef.current?.click();
-                      }
-                    }}
-                    size="sm"
-                    type="button"
-                    variant="secondary"
-                  >
-                    Upload to Google Drive
-                  </Button>
-                  <Button
-                    onClick={() => void openDriveBrowser("imageUrl")}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    Browse Drive
-                  </Button>
-                  <Button
-                    onClick={() => openStorageModal("imageUrl")}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    Use Storage Link
-                  </Button>
-                </div>
               </div>
             </div>
             <Input
@@ -1029,7 +809,7 @@ export function DashboardMenuPage() {
                   imageUrl: event.target.value,
                 }))
               }
-              placeholder="https://utfs.io/f/... or https://drive.google.com/file/d/..."
+              placeholder="https://drive.google.com/file/d/... or direct image URL"
               value={itemForm.imageUrl}
             />
             {imageError && (
@@ -1097,17 +877,12 @@ export function DashboardMenuPage() {
                 arModelIosUrl: value,
               }))
             }
-            onLocalUpload={() => {
-              modelUploadModeRef.current = "local";
-              modelInputRef.current?.click();
-            }}
-            onRemoteUpload={() => {
+            onUpload={() => {
               if (
                 ensureGoogleDriveConnected(
-                  "Connect your Google account before uploading 3D models to Google Drive.",
+                  "Connect your Google account before uploading 3D models.",
                 )
               ) {
-                modelUploadModeRef.current = "google-drive";
                 modelInputRef.current?.click();
               }
             }}
@@ -1120,7 +895,7 @@ export function DashboardMenuPage() {
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) {
-                  void uploadFile(file, "model", modelUploadModeRef.current);
+                  void uploadFile(file, "model", "google-drive");
                 }
                 event.target.value = "";
               }}
@@ -1142,182 +917,6 @@ export function DashboardMenuPage() {
           </div>
         </div>
       </Modal>
-
-      <Modal
-        description="Use a hosted UploadThing, Google Drive, or direct file URL."
-        onClose={() => setStorageModalOpen(false)}
-        open={storageModalOpen}
-        title="Attach External Asset"
-      >
-        <div className="space-y-4">
-          <Field label="Storage Provider">
-            <select
-              className="w-full rounded-md border border-[#e7dfd2] bg-white px-3 py-2 text-sm text-[#111827] outline-none transition focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
-              onChange={(event) =>
-                setStorageProvider(event.target.value as ExternalStorageProvider)
-              }
-              value={storageProvider}
-            >
-              {STORAGE_PROVIDER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          {storageProvider === "google-drive" ? (
-            <div className="rounded-lg border border-[#dbe7e4] bg-[#f7fbfa] p-4">
-              <p className="text-sm font-semibold text-[#0f766e]">
-                Google Drive helper
-              </p>
-              <p className="mt-1 text-sm text-[#4b5563]">
-                Connect Drive once, then browse files from the configured folder
-                or paste a shareable Drive link here.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button onClick={() => router.push(GOOGLE_CONNECT_PAGE)} size="sm" type="button">
-                  Open Google Connect
-                </Button>
-                <Button
-                  onClick={() => {
-                    setStorageModalOpen(false);
-                    void openDriveBrowser(storageTarget);
-                  }}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Browse Folder
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          <Field label="Hosted File URL">
-            <Input
-              autoFocus
-              onChange={(event) => setStorageUrl(event.target.value)}
-              placeholder="Paste the public file URL"
-              value={storageUrl}
-            />
-          </Field>
-
-          {storageError ? (
-            <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
-              {storageError}
-            </Badge>
-          ) : null}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setStorageModalOpen(false)} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={() => void applyStorageUrl()}>Attach Asset</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal
-        description={`Files from your Google Drive folder for ${getTargetLabel(storageTarget)}.`}
-        maxWidth="max-w-4xl"
-        onClose={() => setDriveBrowserOpen(false)}
-        open={driveBrowserOpen}
-        title="Google Drive Library"
-      >
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-[#111827]">
-                Pick a file for {getTargetLabel(storageTarget)}
-              </p>
-              <p className="text-sm text-[#6b7280]">
-                Uploaded files are read from your configured Google Drive folder.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={() => router.push(GOOGLE_CONNECT_PAGE)}
-                size="sm"
-                type="button"
-                variant={driveNeedsAuth ? "default" : "outline"}
-              >
-                Open Google Connect
-              </Button>
-              <Button
-                disabled={driveLoading}
-                onClick={() => void loadGoogleDriveAssets(storageTarget)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <RefreshCw className={`h-4 w-4 ${driveLoading ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-            </div>
-          </div>
-
-          {driveError ? (
-            <Badge className="bg-[#ffe8d6] text-[#c2410c]" variant="warm">
-              {driveError}
-            </Badge>
-          ) : null}
-
-          {driveLoading ? (
-            <div className="rounded-xl border border-dashed border-[#d9cdbb] bg-[#fffcf8] p-10 text-center text-sm text-[#6b7280]">
-              Loading Google Drive files...
-            </div>
-          ) : driveAssets.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {driveAssets.map((asset) => (
-                <Card key={asset.id} className="overflow-hidden">
-                  <CardContent className="space-y-4 p-4">
-                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-[#ece4d8] bg-[#f7f3eb]">
-                      {storageTarget === "imageUrl" ? (
-                        <Image
-                          alt={asset.name}
-                          className="object-cover"
-                          fill
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                          src={asset.thumbnailUrl || asset.previewUrl}
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 px-4 text-center text-[#6b7280]">
-                          <Package className="h-8 w-8 text-[#0f766e]" />
-                          <p className="text-xs font-medium uppercase tracking-[0.18em]">
-                            {asset.name.split(".").pop() || "File"}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="line-clamp-1 font-semibold text-[#111827]">
-                        {asset.name}
-                      </p>
-                      <p className="text-xs text-[#6b7280]">{asset.mimeType}</p>
-                    </div>
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        applyAssetToItem(asset);
-                        setDriveBrowserOpen(false);
-                        setDriveError("");
-                      }}
-                      type="button"
-                    >
-                      Use This File
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-[#d9cdbb] bg-[#fffcf8] p-10 text-center text-sm text-[#6b7280]">
-              No matching files were found in the Google Drive folder yet.
-            </div>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }
@@ -1328,8 +927,7 @@ function ModelAssetField({
   children,
   onAndroidUrlChange,
   onIosUrlChange,
-  onLocalUpload,
-  onRemoteUpload,
+  onUpload,
   uploading,
   error,
 }: {
@@ -1338,8 +936,7 @@ function ModelAssetField({
   children: React.ReactNode;
   onAndroidUrlChange: (value: string) => void;
   onIosUrlChange: (value: string) => void;
-  onLocalUpload: () => void;
-  onRemoteUpload: () => void;
+  onUpload: () => void;
   uploading: boolean;
   error?: string;
 }) {
@@ -1348,7 +945,7 @@ function ModelAssetField({
       <div className="flex flex-col gap-2 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
         {children}
         <p className="text-sm leading-6 text-[#4b5563]">
-          Use one upload field for either platform. `.glb` and `.gltf` files are
+          Upload a 3D model to Google Drive. `.glb` and `.gltf` files are
           saved for Android/Web viewers, while `.usdz` files are saved for iPhone
           and iPad Quick Look.
         </p>
@@ -1374,19 +971,14 @@ function ModelAssetField({
         <button
           className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-3 py-4 text-xs text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
           disabled={uploading}
-          onClick={onLocalUpload}
+          onClick={onUpload}
           type="button"
         >
           <Upload className="h-4 w-4" />
           <span>
-            {uploading ? "Uploading..." : "Upload a 3D model (.glb, .gltf, .usdz)"}
+            {uploading ? "Uploading to Google Drive..." : "Upload 3D model to Google Drive (.glb, .gltf, .usdz)"}
           </span>
         </button>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={onRemoteUpload} size="sm" type="button" variant="secondary">
-            Upload to Google Drive
-          </Button>
-        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
             onChange={(event) => onAndroidUrlChange(event.target.value)}

@@ -63,7 +63,6 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
     };
   }, []);
 
-
   function handleResetView() {
     if (!modelViewerRef.current) {
       return;
@@ -94,13 +93,18 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
   }
 
   return (
-    <div className="relative h-full w-full bg-[#f7f3eb]" ref={wrapperRef}>
+    <div
+      className="relative h-full w-full bg-[#f7f3eb]"
+      ref={wrapperRef}
+      style={{ minHeight: "280px", touchAction: "none" }}
+    >
+      {/* @ts-expect-error model-viewer is a web component */}
       <model-viewer
         alt={item.name}
         ar
         ar-modes="webxr scene-viewer quick-look"
         ar-scale="fixed"
-        auto-rotate={autoRotate}
+        auto-rotate={autoRotate ? "" : undefined}
         camera-controls
         camera-orbit={DEFAULT_CAMERA_ORBIT}
         environment-image="neutral"
@@ -108,21 +112,26 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         field-of-view="28deg"
         interpolation-decay="120"
         interaction-prompt-style="wiggle"
-        ios-src={resolveDriveUrl(item.arModelIosUrl)}
+        ios-src={resolveDriveUrl(item.arModelIosUrl) || undefined}
         max-camera-orbit="auto auto 140%"
         max-field-of-view="36deg"
         min-camera-orbit="auto auto 58%"
         min-field-of-view="22deg"
         orbit-sensitivity="0.8"
-        poster={resolveDriveUrl(item.imageUrl, "image")}
+        poster={resolveDriveUrl(item.imageUrl, "image") || undefined}
         shadow-intensity="1"
-        src={resolveDriveUrl(item.arModelUrl)}
-        onLoad={() => console.log("Model loaded successfully")}
-        onError={(e) => console.error("Model failed to load", e)}
+        src={resolveDriveUrl(item.arModelUrl) || undefined}
         touch-action="none"
         zoom-sensitivity="0.8"
-        className="h-full w-full rounded-lg bg-[#f7f3eb]"
-        ref={(node) => {
+        style={{
+          width: "100%",
+          height: "100%",
+          minHeight: "280px",
+          backgroundColor: "#f7f3eb",
+          borderRadius: "8px",
+          outline: "none",
+        }}
+        ref={(node: HTMLElement | null) => {
           modelViewerRef.current = node as ModelViewerDomElement | null;
         }}
       >
@@ -137,6 +146,7 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         </Button>
       </model-viewer>
 
+      {/* Controls overlay */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap justify-between gap-2">
         <div className="pointer-events-auto rounded-full border border-white/60 bg-white/92 p-1 shadow-lg backdrop-blur">
           <div className="flex items-center gap-1">
@@ -175,7 +185,6 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
