@@ -132,6 +132,9 @@ export function DashboardMenuPage() {
   const [redirectingToGoogleConnect, setRedirectingToGoogleConnect] =
     useState(false);
 
+  const [imageError, setImageError] = useState("");
+  const [modelError, setModelError] = useState("");
+
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
 
@@ -304,7 +307,10 @@ export function DashboardMenuPage() {
       }
 
       const setter = type === "image" ? setUploading : setUploadingModel;
+      const errorSetter = type === "image" ? setImageError : setModelError;
+
       setter(true);
+      errorSetter("");
       setStorageError("");
       setDriveError("");
 
@@ -323,9 +329,17 @@ export function DashboardMenuPage() {
           method: "POST",
         });
 
-        const result = (await response.json()) as
-          | { message?: string; needsAuth?: boolean; url?: string }
-          | undefined;
+        let result;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          result = await response.json();
+        } else {
+          const text = await response.text();
+          if (response.status === 413 || text.includes("Too Large")) {
+            throw new Error("File is too large for the local server. Try uploading to Google Drive instead.");
+          }
+          result = { message: text };
+        }
 
         if (!response.ok || !result?.url) {
           if (result?.needsAuth) {
@@ -347,9 +361,10 @@ export function DashboardMenuPage() {
           setDriveNeedsAuth(false);
         }
       } catch (error) {
-        setStorageError(
-          error instanceof Error ? error.message : "Upload failed. Please retry.",
-        );
+        const message = error instanceof Error ? error.message : "Upload failed. Please retry.";
+        const errorSetter = type === "image" ? setImageError : setModelError;
+        errorSetter(message);
+        setStorageError(message);
       } finally {
         setter(false);
       }
@@ -1017,6 +1032,11 @@ export function DashboardMenuPage() {
               placeholder="https://utfs.io/f/... or https://drive.google.com/file/d/..."
               value={itemForm.imageUrl}
             />
+            {imageError && (
+              <p className="mt-2 text-xs font-medium text-[#c2410c]">
+                {imageError}
+              </p>
+            )}
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1092,6 +1112,7 @@ export function DashboardMenuPage() {
               }
             }}
             uploading={uploadingModel}
+            error={modelError}
           >
             <input
               accept=".glb,.gltf,.usdz"
@@ -1310,6 +1331,7 @@ function ModelAssetField({
   onLocalUpload,
   onRemoteUpload,
   uploading,
+  error,
 }: {
   androidUrl: string;
   iosUrl: string;
@@ -1319,6 +1341,7 @@ function ModelAssetField({
   onLocalUpload: () => void;
   onRemoteUpload: () => void;
   uploading: boolean;
+  error?: string;
 }) {
   return (
     <Field label="3D Model">
@@ -1376,6 +1399,11 @@ function ModelAssetField({
             value={iosUrl}
           />
         </div>
+        {error && (
+          <p className="mt-1 text-xs font-medium text-[#c2410c]">
+            {error}
+          </p>
+        )}
       </div>
     </Field>
   );
