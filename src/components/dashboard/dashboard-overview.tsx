@@ -71,9 +71,6 @@ export function DashboardOverview() {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild size="sm">
-                <Link href="/dashboard/profile">Edit Profile</Link>
-              </Button>
               <Button asChild size="sm" variant="secondary">
                 <Link href="/dashboard/menu">Manage Menu</Link>
               </Button>
