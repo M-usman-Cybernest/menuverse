@@ -31,6 +31,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
+import type { ItemAssetTarget } from "@/lib/storage";
+import { hasArAsset } from "@/lib/storage";
+import { formatPrice } from "@/lib/utils";
+
 const GOOGLE_CONNECT_PAGE = "/dashboard/google-connect";
 
 type CategoryForm = { name: string; description: string };
@@ -42,6 +46,20 @@ type ItemForm = {
   arModelUrl: string;
   arModelIosUrl: string;
   categoryId: string;
+};
+
+type UploadMode = "local" | "google-drive";
+type UploadKind = "image" | "model";
+
+const EMPTY_CATEGORY: CategoryForm = { name: "", description: "" };
+const EMPTY_ITEM: ItemForm = {
+  name: "",
+  description: "",
+  price: 0,
+  imageUrl: "",
+  arModelUrl: "",
+  arModelIosUrl: "",
+  categoryId: "",
 };
 
 export function DashboardMenuPage() {
@@ -64,6 +82,22 @@ export function DashboardMenuPage() {
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [catForm, setCatForm] = useState<CategoryForm>(EMPTY_CATEGORY);
   const [editCatId, setEditCatId] = useState<string | null>(null);
+
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [itemForm, setItemForm] = useState<ItemForm>(EMPTY_ITEM);
+  const [editItemId, setEditItemId] = useState<string | null>(null);
+
+  const [storageError, setStorageError] = useState("");
+  const [driveError, setDriveError] = useState("");
+  const [driveNeedsAuth, setDriveNeedsAuth] = useState(false);
+  const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
+  const [checkingGoogleDriveStatus, setCheckingGoogleDriveStatus] =
+    useState(true);
+  const [redirectingToGoogleConnect, setRedirectingToGoogleConnect] =
+    useState(false);
+
+  const [imageError, setImageError] = useState("");
+  const [modelError, setModelError] = useState("");
 
   const [uploading, setUploading] = useState(false);
   const [uploadingModel, setUploadingModel] = useState(false);
