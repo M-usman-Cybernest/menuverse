@@ -1,70 +1,99 @@
-# MenuVerse
+# MenuVerse 🚀
 
-MenuVerse is a mobile-first AR menu SaaS starter with:
+MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to transform traditional dining into an immersive digital experience. Built with Next.js 15, it empowers restaurant owners to showcase their dishes in stunning 3D and Augmented Reality (AR) directly from the browser.
 
-- a direct public restaurant home page at `/`
-- login and signup flows
-- JWT cookie authentication
-- role-aware dashboard pages with sidebar navigation
-- Mongo-ready persistence plus a dev fallback
-- seeded admin and owner accounts from env
-- QR export and WebAR-ready item previews
+---
 
-## Main routes
+## ✨ Core Features
 
-- `/` public restaurant menu
-- `/login`
-- `/signup`
-- `/dashboard`
-- `/dashboard/profile`
-- `/dashboard/branches`
-- `/dashboard/menu`
-- `/dashboard/qr`
-- `/dashboard/users` admin only
+### 🕶️ Augmented Reality & 3D Visualization
+- **Immersive Previews**: High-fidelity 3D models powered by Google's `<model-viewer>`.
+- **Cross-Platform AR**: Automatic support for **iOS (USDZ)** via Quick Look and **Android/Web (GLB)** via WebXR.
+- **Tableside Experience**: Customers can "place" digital dishes on their table to see proportions and presentation before ordering.
+- **Dynamic QR Codes**: Every menu item generates a unique QR code that launches the AR experience directly.
 
-## Stack
+### 📁 Smart Asset Management
+- **Google Drive Integration**: Automated upload flow where menu assets (images and 3D models) are stored securely in the cloud.
+- **CORS-Aware Proxying**: Custom API routes to bypass Google Drive's restricted access, ensuring seamless loading of large 3D files.
+- **Smart Sizing**: Automatic enforcement of file limits (20MB) with user-friendly error reporting.
 
-- Next.js 16 App Router
-- React 19
-- Tailwind CSS 4
-- Framer Motion
-- Mongoose
-- `jose` + JWT cookies
-- `bcryptjs`
-- QRCode
-- `@google/model-viewer`
+### 🛠️ Robust Admin Dashboard
+- **Menu Builder**: Intuitive management of categories and menu items.
+- **Branch Management**: Support for multiple locations and custom restaurant branches.
+- **Role-Based Access**: Secure dashboard protected by JWT-based authentication for Admins and Owners.
+- **Live Statistics**: Overview of restaurant performance and item popularity.
 
-## Setup
+---
 
-1. Copy `.env.example` to `.env.local`
-2. Set your values
-3. Run:
+## 🛠️ Technical Stack
 
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Language**: TypeScript
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Database**: [MongoDB](https://www.mongodb.com/) (Mongoose ODM)
+- **3D Engine**: [@google/model-viewer](https://modelviewer.dev/)
+- **Authentication**: JWT Cookie-based Session Management
+- **Cloud Storage**: Google Drive API
+
+---
+
+## 🗺️ Route Architecture
+
+### 🏠 Public View
+- `/`: The primary restaurant storefront.
+- `/[slug]`: Branch-specific menu pages with filtered categories.
+- `?item=[id]`: Direct-to-AR routing for specific menu items.
+
+### 🛡️ Dashboard (Protected)
+- `/dashboard`: Analytics and overview.
+- `/dashboard/menu`: The core Menu & Category editor.
+- `/dashboard/google-connect`: OAuth flow for Google Drive storage.
+- `/dashboard/qr`: Centralized QR code management.
+- `/dashboard/branches`: Multi-location management.
+- `/dashboard/users`: Admin-level user control.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js 20+
+- MongoDB instance (or uses in-memory dev store)
+- Google Cloud Console Project (for Google Drive storage)
+
+### 2. Installation
 ```bash
 npm install
+```
+
+### 3. Environment Setup
+Copy `.env.example` to `.env.local` and configure your keys:
+```env
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_secret
+GOOGLE_CLIENT_ID=your_id
+GOOGLE_CLIENT_SECRET=your_secret
+```
+
+### 4. Database Seeding
+```bash
 npm run seed
+```
+
+### 5. Launch
+```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-## Seeded accounts
+---
 
-The seed reads from env and creates:
+## 🔒 Security & Performance
+- **Role-Aware Guards**: Middleware-based protection for sensitive routes.
+- **Optimized Media**: Lazy-loaded 3D models and optimized images for fast mobile performance.
+- **SEO Ready**: Semantic HTML5 and metadata management for maximum search visibility.
 
-- one admin user via `ADMIN_*`
-- one owner user via `SEED_OWNER_*`
-- one default restaurant via `SEED_RESTAURANT_NAME` and `NEXT_PUBLIC_DEFAULT_RESTAURANT_SLUG`
+---
 
-If `MONGODB_URI` is unset, the app falls back to an in-memory dev store so auth and dashboard flows still work locally.
-
-## Implemented
-
-- public restaurant page on the home route with 3-column medium cards
-- login and signup
-- JWT cookie session auth
-- protected dashboard layout with sidebar links
-- overview, profile, branches, menu, QR, and users pages
-- admin user creation
-- restaurant, branch, timings, category, and menu item editing
-- Mongo-backed models and seed flow
+Built with  by the MenuVerse Team.
