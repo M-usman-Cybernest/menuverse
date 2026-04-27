@@ -32,7 +32,7 @@ type ModelViewerDomElement = HTMLElement & {
   getCameraOrbit: () => CameraOrbit;
 };
 
-const DEFAULT_CAMERA_ORBIT = "0deg 92deg 82%";
+const DEFAULT_CAMERA_ORBIT = "auto auto auto";
 export function ModelViewerElement({ item }: ModelViewerElementProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const modelViewerRef = useRef<ModelViewerDomElement | null>(null);
@@ -96,37 +96,29 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
     <div
       className="relative h-full w-full bg-[#f7f3eb]"
       ref={wrapperRef}
-      style={{ minHeight: "280px", touchAction: "none" }}
+      style={{ touchAction: "none" }}
     >
       {/* @ts-expect-error model-viewer is a web component */}
       <model-viewer
         alt={item.name}
         ar
         ar-modes="webxr scene-viewer quick-look"
-        ar-scale="fixed"
+        ar-scale="auto"
         auto-rotate={autoRotate ? "" : undefined}
         camera-controls
         camera-orbit={DEFAULT_CAMERA_ORBIT}
         environment-image="neutral"
-        exposure="1.15"
-        field-of-view="28deg"
+        exposure="1.0"
         interpolation-decay="120"
         interaction-prompt-style="wiggle"
         ios-src={resolveDriveUrl(item.arModelIosUrl) || undefined}
-        max-camera-orbit="auto auto 140%"
-        max-field-of-view="36deg"
-        min-camera-orbit="auto auto 58%"
-        min-field-of-view="22deg"
-        orbit-sensitivity="0.8"
         poster={resolveDriveUrl(item.imageUrl, "image") || undefined}
         shadow-intensity="1"
         src={resolveDriveUrl(item.arModelUrl) || undefined}
         touch-action="none"
-        zoom-sensitivity="0.8"
         style={{
           width: "100%",
           height: "100%",
-          minHeight: "280px",
           backgroundColor: "#f7f3eb",
           borderRadius: "8px",
           outline: "none",
@@ -136,13 +128,13 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         }}
       >
         <Button
-          className="absolute inset-x-4 bottom-4"
+          className="absolute inset-x-4 bottom-4 font-semibold shadow-lg"
           size="lg"
           slot="ar-button"
           type="button"
         >
-          <Move3D className="h-4 w-4" />
-          Launch Native AR
+          <Move3D className="mr-2 h-5 w-5" />
+          View in your space
         </Button>
       </model-viewer>
 

@@ -254,7 +254,7 @@ export function DashboardMenuPage() {
         } else {
           const text = await response.text();
           if (response.status === 413 || text.includes("Too Large")) {
-            throw new Error("File is too large for the local server. Try uploading to Google Drive instead.");
+            throw new Error("File is too large.");
           }
           result = { message: text };
         }
@@ -651,11 +651,10 @@ export function DashboardMenuPage() {
                 return (
                   <button
                     key={tag}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                      active
+                    className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${active
                         ? "bg-[#0f766e] text-white"
                         : "bg-[#f2ede2] text-[#6b7280] hover:bg-[#e7dfd2]"
-                    }`}
+                      }`}
                     onClick={() => toggleItemTag(tagEditorItemId, tag)}
                     type="button"
                   >

@@ -75,7 +75,7 @@ export function PublicRestaurantPage({
   const activeItem =
     initialDataset?.items.find(
       (item) =>
-        item.id === (isDesktop ? requestedArItemId : manualArItemId) &&
+        item.id === (requestedArItemId || manualArItemId) &&
         hasArAsset(item),
     ) ?? null;
   const activeModalItem =
