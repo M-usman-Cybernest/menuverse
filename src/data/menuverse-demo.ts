@@ -7,6 +7,7 @@ export const menuverseDemo: RestaurantDataset = {
     email: "curator@apexstore.test",
     role: "owner",
     subscriptionStatus: "active",
+    isVerified: true,
   },
   restaurant: {
     id: "rest_apex_store",
@@ -86,7 +87,7 @@ export const menuverseDemo: RestaurantDataset = {
       description:
         "High-performance lumbar support with breathable mesh. Preview the 3D mechanics and fit in your office space before ordering.",
       price: 850,
-      imageUrl: "https://lh3.googleusercontent.com/d/1yMUGZAsZomtV7h4sIs4NPmcvGfrhDFwf",
+      imageUrl: "/images/pasta.jpg",
       arModelUrl: "/models/avocado.glb",
       dietaryTags: ["Bestseller", "Pre-order"],
       prepTime: "2-3 weeks",
@@ -102,7 +103,7 @@ export const menuverseDemo: RestaurantDataset = {
       description:
         "Stain-resistant fabric with modular sections. Use AR to see exactly how this fits in your living room layout.",
       price: 2400,
-      imageUrl: "https://lh3.googleusercontent.com/d/1yMUGZAsZomtV7h4sIs4NPmcvGfrhDFwf",
+      imageUrl: "/images/pasta.jpg",
       dietaryTags: ["Customizable"],
       prepTime: "4-6 weeks",
       deliveryTime: { value: 5, unit: "weeks" },
@@ -116,7 +117,7 @@ export const menuverseDemo: RestaurantDataset = {
       description:
         "Fast-charging for three devices with a sleek titanium finish. A perfect desk companion.",
       price: 129,
-      imageUrl: "https://lh3.googleusercontent.com/d/1yMUGZAsZomtV7h4sIs4NPmcvGfrhDFwf",
+      imageUrl: "/images/pasta.jpg",
       dietaryTags: ["New Arrival", "Ships Fast"],
       prepTime: "1-2 days",
       deliveryTime: { value: 2, unit: "days" },
@@ -130,7 +131,7 @@ export const menuverseDemo: RestaurantDataset = {
       description:
         "Hand-woven linen for year-round comfort. Available in multiple earthy tones.",
       price: 85,
-      imageUrl: "https://lh3.googleusercontent.com/d/1yMUGZAsZomtV7h4sIs4NPmcvGfrhDFwf",
+      imageUrl: "/images/pasta.jpg",
       dietaryTags: ["Eco-Friendly"],
       prepTime: "3-5 days",
       deliveryTime: { value: 4, unit: "days" },
