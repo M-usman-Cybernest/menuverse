@@ -20,7 +20,7 @@ export async function generateMetadata({
     title: dataset ? `${dataset.restaurant.name} | MenuVerse` : "MenuVerse",
     description:
       dataset?.restaurant.description ??
-      "Preview dishes, locations, and AR-ready menu items.",
+      "Preview dishes, locations, and AR-ready Inventory.",
   };
 }
 

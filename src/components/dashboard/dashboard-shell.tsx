@@ -31,7 +31,7 @@ const navigation = [
   {
     href: "/dashboard/menu",
     icon: Settings2,
-    label: "Menu Builder",
+    label: "Inventory",
     manageOnly: true,
   },
   {
@@ -184,7 +184,7 @@ export function DashboardShell({
             {publicUrl ? (
               <Button asChild className="flex-1" size="sm" variant="outline">
                 <a href={publicUrl} rel="noreferrer" target="_blank">
-                  Public Menu
+                  Public Site
                 </a>
               </Button>
             ) : null}
@@ -226,7 +226,7 @@ export function DashboardShell({
               {publicUrl ? (
                 <Button asChild size="sm" variant="outline">
                   <a href={publicUrl} rel="noreferrer" target="_blank">
-                    Public Menu
+                    Public Site
                   </a>
                 </Button>
               ) : null}

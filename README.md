@@ -18,7 +18,7 @@ MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to tran
 - **Smart Sizing**: Automatic enforcement of file limits (20MB) with user-friendly error reporting.
 
 ### 🛠️ Robust Admin Dashboard
-- **Menu Builder**: Intuitive management of categories and menu items.
+- **Inventory**: Intuitive management of categories and Inventory.
 - **Branch Management**: Support for multiple locations and custom restaurant branches.
 - **Role-Based Access**: Secure dashboard protected by JWT-based authentication for Admins and Owners.
 - **Live Statistics**: Overview of restaurant performance and item popularity.
@@ -42,7 +42,7 @@ MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to tran
 ### 🏠 Public View
 - `/`: The primary restaurant storefront.
 - `/[slug]`: Branch-specific menu pages with filtered categories.
-- `?item=[id]`: Direct-to-AR routing for specific menu items.
+- `?item=[id]`: Direct-to-AR routing for specific Inventory.
 
 ### 🛡️ Dashboard (Protected)
 - `/dashboard`: Analytics and overview.

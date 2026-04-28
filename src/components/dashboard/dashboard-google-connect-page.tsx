@@ -192,7 +192,7 @@ export function DashboardGoogleConnectPage() {
                 Google account connected successfully.
               </p>
               <p className="mt-2">
-                You can go back to the menu builder and add items with Google Drive
+                You can go back to the Inventory and add items with Google Drive
                 uploads enabled.
               </p>
             </div>
@@ -213,7 +213,7 @@ export function DashboardGoogleConnectPage() {
           {configured && !showConnectedState ? (
             <p className="text-sm leading-6 text-[#4b5563]">
               Your Google account is not connected yet. Connect it first, then head
-              back to the menu builder to add new items and upload 3D assets.
+              back to the Inventory to add new items and upload 3D assets.
             </p>
           ) : null}
 
@@ -242,7 +242,7 @@ export function DashboardGoogleConnectPage() {
               Refresh Status
             </Button>
             <Button asChild type="button" variant="secondary">
-              <Link href="/dashboard/menu">Back to Menu Builder</Link>
+              <Link href="/dashboard/menu">Back to Inventory</Link>
             </Button>
           </div>
         </CardContent>

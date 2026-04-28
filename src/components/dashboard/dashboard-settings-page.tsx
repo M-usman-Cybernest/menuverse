@@ -20,7 +20,7 @@ import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import { formatTimeRange, slugify } from "@/lib/utils";
 
-type Tab = "restaurant" | "hours" | "branches" | "account";
+type Tab = "business" | "hours" | "branches" | "account";
 
 type BranchForm = {
   name: string;
@@ -56,7 +56,7 @@ export function DashboardSettingsPage() {
     updateTiming,
   } = useDashboard();
 
-  const [activeTab, setActiveTab] = useState<Tab>("restaurant");
+  const [activeTab, setActiveTab] = useState<Tab>("business");
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [branchForm, setBranchForm] = useState<BranchForm>(EMPTY_BRANCH);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -109,7 +109,7 @@ export function DashboardSettingsPage() {
   }
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "restaurant", label: "Restaurant", icon: <Store className="h-4 w-4" /> },
+    { id: "business", label: "Business", icon: <Store className="h-4 w-4" /> },
     { id: "hours", label: "Hours", icon: <Clock className="h-4 w-4" /> },
     { id: "branches", label: "Branches", icon: <Building2 className="h-4 w-4" /> },
     { id: "account", label: "Account", icon: <User className="h-4 w-4" /> },
@@ -123,12 +123,12 @@ export function DashboardSettingsPage() {
         <div>
           <p className="text-sm font-semibold text-[#0f766e]">Settings</p>
           <h2 className="text-2xl font-semibold tracking-tight">
-            Restaurant Configuration
+            Business Configuration
           </h2>
         </div>
         <Button
           onClick={() => {
-            if (activeTab === "restaurant") saveProfile(restaurant);
+            if (activeTab === "business") saveProfile(restaurant);
             else if (activeTab === "hours") saveHours(restaurant.timings);
             else if (activeTab === "branches") saveBranches(restaurant.branches);
             else saveRestaurant();
@@ -164,14 +164,14 @@ export function DashboardSettingsPage() {
         ))}
       </div>
 
-      {/* ===== RESTAURANT TAB ===== */}
-      {activeTab === "restaurant" ? (
+      {/* ===== BUSINESS TAB ===== */}
+      {activeTab === "business" ? (
         <div className="grid gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Restaurant Details</CardTitle>
+              <CardTitle>Business Details</CardTitle>
               <CardDescription>
-                Core information shown on the public menu page.
+                Core information shown on the public site page.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
@@ -272,7 +272,7 @@ export function DashboardSettingsPage() {
               <CardHeader>
                 <CardTitle>Cover Image</CardTitle>
                 <CardDescription>
-                  The hero banner on the public menu page.
+                  The hero banner on the public site page.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -298,7 +298,7 @@ export function DashboardSettingsPage() {
               <CardContent>
                 <div className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3">
                   <div>
-                    <p className="font-medium text-[#111827]">Public menu</p>
+                    <p className="font-medium text-[#111827]">Public site</p>
                     <p className="text-sm text-[#6b7280]">
                       When off, the public route stays hidden.
                     </p>
@@ -327,7 +327,7 @@ export function DashboardSettingsPage() {
           <CardHeader>
             <CardTitle>Operating Hours</CardTitle>
             <CardDescription>
-              These timings appear on the public menu page. Changes are saved
+              These timings appear on the public site page. Changes are saved
               with the restaurant data.
             </CardDescription>
           </CardHeader>
@@ -731,10 +731,10 @@ function Field({
   label: string;
 }) {
   return (
-    <label className={className}>
-      <span className="mb-2 block text-sm font-medium text-[#374151]">
+    <label className={`block ${className || ""}`}>
+      <div className="mb-2 block text-sm font-medium text-[#374151]">
         {label}
-      </span>
+      </div>
       {children}
     </label>
   );

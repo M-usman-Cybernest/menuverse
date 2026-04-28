@@ -82,44 +82,40 @@ export function ArViewerDrawer({
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col overflow-y-auto md:flex-row" style={{ minHeight: 0 }}>
-          {/* 3D Viewer - full width on mobile, right side on desktop */}
-          <div className="order-1 w-full md:order-2 md:w-1/2 lg:w-3/5">
-            <div
-              className="relative w-full bg-[#f7f3eb]"
-              style={{ height: "clamp(280px, 50vh, 500px)" }}
-            >
-              <ModelViewerElement item={item} key={item.id} />
-            </div>
-          </div>
-
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row" style={{ minHeight: 0 }}>
           {/* Info Panel */}
-          <div className="order-2 flex w-full flex-col gap-4 p-4 sm:p-6 md:order-1 md:w-1/2 md:overflow-y-auto lg:w-2/5">
+          <div className="order-2 flex w-full flex-col gap-4 p-4 sm:p-5 md:order-1 md:w-1/2 md:h-[500px] md:overflow-y-auto lg:w-2/5">
             {/* Description */}
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-wider text-[#0f766e]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f766e]">
                 Tableside Preview
               </p>
-              <p className="text-sm leading-relaxed text-[#4b5563]">
+              <h3 className="text-lg font-bold text-[#111827]">{item.name}</h3>
+              <p className="text-xs leading-relaxed text-[#4b5563]">
                 {item.description || "Explore this dish in 3D before you order."}
               </p>
-              <div className="flex flex-wrap gap-2 pt-1">
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {item.dietaryTags.map((tag) => (
-                  <Badge key={tag} className="rounded-xl bg-[#f2ede2] text-[#4b5563] hover:bg-[#e8dfcf]">{tag}</Badge>
+                  <Badge key={tag} className="rounded-lg bg-[#f2ede2] px-2 py-0.5 text-[10px] text-[#4b5563] hover:bg-[#e8dfcf]">{tag}</Badge>
                 ))}
               </div>
             </div>
 
             {/* QR Code */}
             <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
-              <div className="flex items-center gap-4">
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[#ece4d8] bg-white p-1.5 shadow-sm sm:h-28 sm:w-28">
+              <div className="flex flex-col gap-3">
+                <div className="space-y-1">
+                  <p className="text-[11px] leading-relaxed text-[#6b7280]">
+                    Scan this QR code to view this item in your own space using Augmented Reality on your phone.
+                  </p>
+                </div>
+                <div className="relative mx-auto h-40 w-40 shrink-0 overflow-hidden rounded-xl border border-[#ece4d8] bg-white p-2 shadow-sm sm:h-55 sm:w-55">
                   {qrDataUrl ? (
                     <Image
                       src={qrDataUrl}
                       alt="AR QR Code"
-                      width={112}
-                      height={112}
+                      width={200}
+                      height={200}
                       className="h-full w-full object-contain"
                       unoptimized
                     />
@@ -129,15 +125,14 @@ export function ArViewerDrawer({
                     </div>
                   )}
                 </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-semibold text-[#111827]">
-                    AR Discovery
-                  </p>
-                  <p className="text-xs leading-relaxed text-[#6b7280]">
-                    Scan to view this item in your own space using AR on your phone.
-                  </p>
-                </div>
               </div>
+            </div>
+          </div>
+
+          {/* 3D Viewer - full width on mobile, right side on desktop */}
+          <div className="order-1 w-full bg-[#f7f3eb] md:order-2 md:w-1/2 lg:w-3/5">
+            <div className="h-[280px] w-full md:h-[450px]">
+              <ModelViewerElement item={item} key={item.id} />
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ export function DashboardOverview() {
         />
         <MetricCard
           icon={<Store className="h-4 w-4" />}
-          title="Menu Items"
+          title="Inventory"
           value={items.length.toString()}
         />
         <MetricCard
@@ -77,7 +77,7 @@ export function DashboardOverview() {
               {publicUrl ? (
                 <Button asChild size="sm" variant="outline">
                   <a href={publicUrl} rel="noreferrer" target="_blank">
-                    Open Public Menu
+                    Open Public Site
                   </a>
                 </Button>
               ) : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import { jsPDF } from "jspdf";
 import { Copy, Download, FileText, Printer, Save } from "lucide-react";
 import Image from "next/image";
 import QRCode from "qrcode";
@@ -104,6 +105,142 @@ export function DashboardQrPage() {
     });
   }
 
+  function downloadAsPdf() {
+    if (!restaurant || !globalQr) return;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Header Section with professional gradient-like background
+    doc.setFillColor(15, 118, 110); // #0f766e
+    doc.rect(0, 0, pageWidth, 45, "F");
+
+    // Header Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(26);
+    doc.setFont("helvetica", "bold");
+    doc.text(restaurant.name.toUpperCase(), pageWidth / 2, 22, { align: "center" });
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("POWERED BY MENUVERSE AR - THE FUTURE OF DINING", pageWidth / 2, 30, { align: "center" });
+
+    // Main QR Section
+    doc.setTextColor(17, 24, 39); // #111827
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("SCAN OUR DIGITAL INVENTORY", pageWidth / 2, 62, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(107, 114, 128); // #6b7280
+    doc.text(
+      "Experience our menu in stunning 3D and Augmented Reality.",
+      pageWidth / 2,
+      68,
+      { align: "center" }
+    );
+
+    // QR Code with frame
+    const qrSize = 85;
+    const qrX = (pageWidth - qrSize) / 2;
+    doc.setDrawColor(231, 223, 210); // #e7dfd2
+    doc.setLineWidth(0.5);
+    doc.roundedRect(qrX - 5, 75, qrSize + 10, qrSize + 10, 5, 5, "D");
+    doc.addImage(globalQr, "PNG", qrX, 80, qrSize, qrSize);
+
+    // Business Website URL
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 118, 110);
+    doc.setFontSize(11);
+    doc.text(publicUrl, pageWidth / 2, 182, { align: "center" }) ;
+
+    // --- SECOND SECTION: DETAILS ---
+    let currentY = 195;
+    const margin = 20;
+
+    // Line separator
+    doc.setDrawColor(209, 213, 219); // gray-300
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
+
+    // Create 2-column layout for details
+    const colWidth = (pageWidth - (margin * 3)) / 2;
+
+    // COLUMN 1: Locations
+    doc.setTextColor(15, 118, 110);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("OUR LOCATIONS", margin, currentY);
+    currentY += 6;
+
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+
+    if (restaurant.branches && restaurant.branches.length > 0) {
+      restaurant.branches.forEach((branch) => {
+        if (currentY > pageHeight - 30) return; // Basic overflow protection
+        doc.setFont("helvetica", "bold");
+        doc.text(branch.name, margin, currentY);
+        currentY += 4;
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(75, 85, 99);
+        doc.text(`${branch.address}, ${branch.city}`, margin, currentY);
+        currentY += 7;
+        doc.setTextColor(17, 24, 39);
+      });
+    } else {
+      doc.text("Main Location: " + restaurant.locationLabel, margin, currentY);
+      currentY += 10;
+    }
+
+    // COLUMN 2: Hours (Parallel to Column 1)
+    let hoursY = 205;
+    const col2X = margin + colWidth + 10;
+
+    doc.setTextColor(15, 118, 110);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("OPERATING HOURS", col2X, hoursY);
+    hoursY += 6;
+
+    doc.setTextColor(17, 24, 39);
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "normal");
+
+    if (restaurant.timings && restaurant.timings.length > 0) {
+      restaurant.timings.forEach((t) => {
+        const status = t.closed ? "CLOSED" : `${t.open} - ${t.close}`;
+        doc.setFont("helvetica", "bold");
+        doc.text(t.day.slice(0, 3).toUpperCase(), col2X, hoursY);
+        doc.setFont("helvetica", "normal");
+        doc.text(status, col2X + 15, hoursY);
+        hoursY += 5;
+      });
+    }
+
+    // Business Description at the very bottom
+    const footerY = pageHeight - 35;
+    doc.setDrawColor(231, 223, 210);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
+
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    if (restaurant.description) {
+      const splitDesc = doc.splitTextToSize(restaurant.description, pageWidth - (margin * 2));
+      doc.text(splitDesc, pageWidth / 2, footerY + 8, { align: "center" });
+    }
+
+    doc.save(`${restaurant.slug}-menu-professional.pdf`);
+  }
+
   if (!restaurant || !publicUrl) {
     return null;
   }
@@ -151,40 +288,39 @@ export function DashboardQrPage() {
 
       {saveSuccess ? <Badge variant="accent">{saveSuccess}</Badge> : null}
 
-      {/* Global QR */}
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card id="global-qr-card">
+      {/* Global QR Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card id="global-qr-card" className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#0f766e]">
               <FileText className="h-4 w-4" />
-              Global Restaurant QR
+              Global QR
             </CardTitle>
-            <CardDescription>
-              Scan to open the full restaurant menu page. Perfect for
-              storefronts, tables, and print materials.
+            <CardDescription className="text-[#4b5563]">
+              Scan to open the full menu page. Perfect for storefronts, tables, and print materials.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
-            <div className="flex items-center justify-center rounded-xl bg-[#f7f3eb] p-6">
+          <CardContent className="flex flex-1 flex-col items-center justify-center space-y-6 pb-8">
+            <div className="flex items-center justify-center rounded-2xl bg-[#f7f3eb] p-6 shadow-inner">
               {globalQr ? (
                 <Image
-                  alt="Restaurant QR code"
-                  className="rounded-lg bg-white p-3 shadow-sm"
-                  height={200}
+                  alt="QR code"
+                  className="rounded-xl bg-white p-4 shadow-md transition-transform hover:scale-[1.02]"
+                  height={240}
                   src={globalQr}
                   unoptimized
-                  width={200}
+                  width={240}
                 />
               ) : (
-                <div className="flex h-[200px] w-[200px] items-center justify-center rounded-lg bg-white text-sm text-[#6b7280]">
+                <div className="flex h-[240px] w-[240px] items-center justify-center rounded-xl bg-white text-sm text-[#6b7280]">
                   Generating...
                 </div>
               )}
             </div>
-            <div className="flex w-full gap-2">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
               <Button
                 asChild
-                className="flex-1"
+                className="w-full"
                 variant="outline"
                 size="sm"
               >
@@ -193,37 +329,46 @@ export function DashboardQrPage() {
                   href={globalQr || undefined}
                 >
                   <Download className="h-4 w-4" />
-                  Download PNG
+                  PNG
                 </a>
               </Button>
               <Button
-                className="flex-1"
+                className="w-full"
+                onClick={downloadAsPdf}
+                variant="outline"
+                size="sm"
+              >
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
+              <Button
+                className="w-full"
                 onClick={() => void copy(publicUrl)}
                 variant="secondary"
                 size="sm"
               >
                 <Copy className="h-4 w-4" />
-                Copy Link
+                Link
               </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Share links */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Share Links</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[#4b5563]">
               Copy the exact destinations behind the QR codes.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex-1 space-y-4 overflow-y-auto max-h-[480px] pr-2 custom-scrollbar">
             <ShareRow
-              label="Public Menu"
+              label="Public Site"
               value={publicUrl}
               onCopy={() => void copy(publicUrl)}
             />
-            {itemQrs.slice(0, 3).map((qr) => (
+            {itemQrs.map((qr) => (
               <ShareRow
                 key={qr.id}
                 label={qr.label}
@@ -231,56 +376,51 @@ export function DashboardQrPage() {
                 onCopy={() => void copy(qr.url)}
               />
             ))}
-            {itemQrs.length > 3 ? (
-              <p className="text-center text-xs text-[#6b7280]">
-                +{itemQrs.length - 3} more item QR codes below
-              </p>
-            ) : null}
           </CardContent>
         </Card>
       </div>
 
-      {/* Per-item QR codes */}
+      {/* Item-Level QR codes */}
       {itemQrs.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>Item-Level QR Codes</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-[#4b5563]">
               {generating
                 ? "Generating QR codes..."
                 : `${itemQrs.length} item QR codes ready for download`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {itemQrs.map((qr) => {
                 const item = items.find((i) => i.id === qr.id);
                 return (
                   <div
                     key={qr.id}
-                    className="rounded-lg border border-[#ece4d8] bg-[#fffcf8] p-4 text-center"
+                    className="group rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-5 text-center transition-all hover:border-[#0f766e] hover:shadow-md"
                   >
-                    <div className="mx-auto mb-3 flex items-center justify-center rounded-lg bg-[#f7f3eb] p-3">
+                    <div className="mx-auto mb-4 flex items-center justify-center rounded-xl bg-[#f7f3eb] p-4 shadow-inner">
                       {qr.dataUrl ? (
                         <Image
                           alt={`${qr.label} QR`}
-                          className="rounded-md bg-white p-1.5"
-                          height={120}
+                          className="rounded-lg bg-white p-2 shadow-sm"
+                          height={140}
                           src={qr.dataUrl}
                           unoptimized
-                          width={120}
+                          width={140}
                         />
                       ) : (
-                        <div className="flex h-[120px] w-[120px] items-center justify-center bg-white text-xs text-[#6b7280]">
+                        <div className="flex h-[140px] w-[140px] items-center justify-center bg-white text-xs text-[#6b7280]">
                           ...
                         </div>
                       )}
                     </div>
-                    <p className="mb-1 text-sm font-semibold text-[#111827]">
+                    <p className="mb-1 truncate text-sm font-bold text-[#111827]">
                       {qr.label}
                     </p>
                     {item ? (
-                      <p className="mb-3 text-xs text-[#0f766e]">
+                      <p className="mb-4 text-xs font-medium text-[#0f766e]">
                         {formatPrice(item.price)}
                       </p>
                     ) : null}
@@ -295,7 +435,7 @@ export function DashboardQrPage() {
                         href={qr.dataUrl || undefined}
                       >
                         <Download className="h-3.5 w-3.5" />
-                        PNG
+                        Download PNG
                       </a>
                     </Button>
                   </div>
@@ -319,22 +459,22 @@ function ShareRow({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-[#ece4d8] bg-[#fffcf8] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
-        {label}
-      </p>
-      <p className="mt-1 break-all text-sm leading-6 text-[#4b5563]">
+    <div className="group rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4 transition-colors hover:border-[#0f766e]">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f766e]">
+          {label}
+        </p>
+        <button
+          onClick={onCopy}
+          className="text-[#6b7280] transition-colors hover:text-[#0f766e]"
+          title="Copy link"
+        >
+          <Copy className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p className="mt-1 line-clamp-1 truncate break-all text-xs text-[#4b5563]">
         {value}
       </p>
-      <Button
-        className="mt-2"
-        onClick={onCopy}
-        size="sm"
-        variant="outline"
-      >
-        <Copy className="h-3.5 w-3.5" />
-        Copy link
-      </Button>
     </div>
   );
 }

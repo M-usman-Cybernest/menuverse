@@ -159,7 +159,7 @@ export function DashboardProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3">
                 <div>
-                  <p className="font-medium text-[#111827]">Public menu</p>
+                  <p className="font-medium text-[#111827]">Public site</p>
                   <p className="text-sm text-[#6b7280]">
                     When off, the public route stays hidden.
                   </p>

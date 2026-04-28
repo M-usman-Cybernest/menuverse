@@ -403,7 +403,7 @@ export function DashboardMenuPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#0f766e]">Menu Builder</p>
+          <p className="text-sm font-semibold text-[#0f766e]">Inventory</p>
           <h2 className="text-2xl font-semibold tracking-tight">
             Categories & Items
           </h2>
@@ -487,11 +487,10 @@ export function DashboardMenuPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-4 w-4 text-[#0f766e]" />
-                All Menu Items
+                All Items
               </CardTitle>
               <CardDescription>
-                {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""} in
-                your menu
+                {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MenuVerse",
   description:
-    "AR menu SaaS starter with a restaurant admin surface, QR exports, and a mobile-first public menu.",
+    "AR menu SaaS starter with a restaurant admin surface, QR exports, and a mobile-first public site.",
 };
 
 export default function RootLayout({
