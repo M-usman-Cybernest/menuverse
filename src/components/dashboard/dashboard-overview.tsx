@@ -72,7 +72,7 @@ export function DashboardOverview() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm" variant="secondary">
-                <Link href="/dashboard/menu">Manage Menu</Link>
+                <Link href="/dashboard/menu">Manage Inventory</Link>
               </Button>
               {publicUrl ? (
                 <Button asChild size="sm" variant="outline">

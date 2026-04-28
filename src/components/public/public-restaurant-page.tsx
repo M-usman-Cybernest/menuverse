@@ -455,41 +455,46 @@ export function PublicRestaurantPage({
       <Modal
         description={
           activeModalItem
-            ? `${activeModalItem.prepTime} - ${formatPrice(activeModalItem.price)}`
+            ? `Delivery Time: ${activeModalItem.prepTime}`
             : undefined
         }
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-3xl"
         onClose={() => setActiveItemModalId("")}
         open={Boolean(activeModalItem)}
         title={activeModalItem?.name}
       >
         {activeModalItem ? (
-          <div className="flex flex-col gap-6 md:flex-row">
-            <div className="flex-1 space-y-5">
+          <div className="flex flex-col gap-8 md:flex-row">
+            <div className="flex-1 space-y-6">
+              <div>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#0f766e]">
+                  Item Details
+                </p>
+                <h3 className="text-2xl font-bold tracking-tight text-[#111827]">
+                  {activeModalItem.name}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-[#6b7280]">
+                  {activeModalItem.description || "Experience the quality and craftsmanship of our selection."}
+                </p>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {activeModalItem.dietaryTags.map((tag) => (
-                  <Badge key={tag} className="rounded-lg">
+                  <Badge key={tag} className="px-2 py-0.5 text-[10px]">
                     {tag}
                   </Badge>
                 ))}
               </div>
 
-              <p className="text-base leading-relaxed text-[#4b5563]">
-                {activeModalItem.description || "No description provided."}
-              </p>
-
-              <div className="rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
-                <div className="flex items-center justify-between gap-3">
+              <div className="rounded-xl border border-[#e8dccb] bg-[#fffcf8] p-3 shadow-sm">
+                <div className="flex items-center gap-2 justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[#111827]">
-                      Pricing & Availability
-                    </p>
-                    <p className="text-xs text-[#6b7280]">
-                      Preparation: {activeModalItem.prepTime}
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#111827]">
+                      Pricing:
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-[#0f766e]">
+                    <p className="text-2xl font-bold text-[#0f766e]">
                       {formatPrice(activeModalItem.price)}
                     </p>
                   </div>
@@ -499,12 +504,12 @@ export function PublicRestaurantPage({
               <div className="flex flex-wrap gap-3 pt-2">
                 {hasArAsset(activeModalItem) ? (
                   <Button
-                    className="bg-[#0f766e] text-white hover:bg-[#0d6b63]"
+                    className="bg-[#0f766e] px-6 text-white hover:bg-[#0d6b63]"
                     onClick={() => openArViewer(activeModalItem.id)}
                     type="button"
                   >
                     <Move3D className="mr-2 h-4 w-4" />
-                    Launch AR
+                    View in 3D / AR
                   </Button>
                 ) : null}
                 <Button
@@ -517,8 +522,8 @@ export function PublicRestaurantPage({
               </div>
             </div>
 
-            <div className="w-full md:w-2/5">
-              <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#ece4d8] bg-[#fffaf2]">
+            <div className="w-full md:w-[45%]">
+              <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-[#e8dccb] bg-white shadow-inner">
                 <Image
                   alt={activeModalItem.name}
                   className="object-cover"
@@ -526,6 +531,13 @@ export function PublicRestaurantPage({
                   sizes="(max-width: 768px) 100vw, 40vw"
                   src={resolveDriveUrl(activeModalItem.imageUrl, "image")}
                 />
+                {hasArAsset(activeModalItem) && (
+                  <div className="absolute right-4 top-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-white shadow-lg">
+                      <Move3D className="h-5 w-5" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
