@@ -12,6 +12,12 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendWelcomeEmail(to: string, name: string, verificationLink: string) {
+  // Prevent sending if SMTP is not properly configured
+  if (!env.smtp.host || env.smtp.host === "gmail" || env.smtp.host.trim() === "") {
+    console.warn("⚠️ SMTP Host is missing or invalid ('gmail'). Please set SMTP_HOST=smtp.gmail.com in your .env file.");
+    return;
+  }
+
   const html = `
     <!DOCTYPE html>
     <html>
