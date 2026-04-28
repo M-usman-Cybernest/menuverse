@@ -106,7 +106,7 @@ export function DashboardQrPage() {
   }
 
   function downloadAsPdf() {
-    if (!restaurant || !globalQr) return;
+    if (!restaurant || !globalQr || !publicUrl) return;
 
     const doc = new jsPDF({
       orientation: "portrait",
