@@ -133,6 +133,7 @@ export async function ensureSeeded() {
           email: env.adminEmail || "admin@menuverse.test",
           role: "admin",
           subscriptionStatus: "active",
+          isVerified: true,
           passwordHash: "$2a$12$DUMMYHASH",
         });
 
