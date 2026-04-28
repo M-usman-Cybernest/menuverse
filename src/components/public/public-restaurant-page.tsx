@@ -199,7 +199,7 @@ export function PublicRestaurantPage({
             fill
             priority
             sizes="100vw"
-            src={initialDataset.restaurant.coverImageUrl}
+            src={resolveDriveUrl(initialDataset.restaurant.coverImageUrl, "image")}
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.16),rgba(17,24,39,0.88))]" />
           <div className="relative mx-auto flex min-h-[35vh] max-w-7xl flex-col justify-between gap-12 px-4 py-5 sm:px-6 lg:px-8">
@@ -237,7 +237,7 @@ export function PublicRestaurantPage({
                         className="object-contain p-2"
                         fill
                         sizes="80px"
-                        src={initialDataset.restaurant.logoUrl}
+                        src={resolveDriveUrl(initialDataset.restaurant.logoUrl, "image")}
                       />
                     </div>
                   )}
@@ -381,7 +381,7 @@ export function PublicRestaurantPage({
                             className="object-cover"
                             fill
                             sizes="(max-width: 768px) 33vw, 20vw"
-                            src={item.imageUrl}
+                            src={resolveDriveUrl(item.imageUrl, "image")}
                           />
                           {hasArAsset(item) && (
                             <div className="absolute right-2 top-2">
@@ -524,7 +524,7 @@ export function PublicRestaurantPage({
                   className="object-cover"
                   fill
                   sizes="(max-width: 768px) 100vw, 40vw"
-                  src={activeModalItem.imageUrl}
+                  src={resolveDriveUrl(activeModalItem.imageUrl, "image")}
                 />
               </div>
             </div>

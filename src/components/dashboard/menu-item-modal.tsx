@@ -14,6 +14,7 @@ import { Modal } from "@/components/ui/modal";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ItemAssetTarget } from "@/lib/storage";
+import { resolveDriveUrl } from "@/lib/google-drive";
 
 const GOOGLE_CONNECT_PAGE = "/dashboard/google-connect";
 
@@ -259,7 +260,7 @@ export function MenuItemModal({
                   className="object-cover"
                   fill
                   sizes="176px"
-                  src={itemForm.imageUrl}
+                  src={resolveDriveUrl(itemForm.imageUrl, "image")}
                 />
               </div>
             ) : null}

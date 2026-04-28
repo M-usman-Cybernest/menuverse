@@ -15,6 +15,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { resolveDriveUrl } from "@/lib/google-drive";
+
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import {
   API_DASHBOARD_UPLOAD,
@@ -421,7 +423,7 @@ export function DashboardMenuPage() {
                             className="object-cover"
                             fill
                             sizes="56px"
-                            src={item.imageUrl}
+                            src={resolveDriveUrl(item.imageUrl, "image")}
                           />
                         </div>
                       </td>

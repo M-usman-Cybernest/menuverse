@@ -208,6 +208,8 @@ export type DbItemRecord = {
   dietaryTags: MenuItem["dietaryTags"];
   prepTime: string;
   featured?: boolean;
+  availableBranches?: string[];
+  deliveryTime?: MenuItem["deliveryTime"];
 };
 
 /* ─────────────────────────────────────────────
@@ -301,6 +303,8 @@ export async function getItemsForRestaurant(restaurantId: string) {
       dietaryTags: r.dietaryTags ?? [],
       prepTime: r.prepTime,
       featured: r.featured,
+      availableBranches: r.availableBranches ?? [],
+      deliveryTime: r.deliveryTime ?? { value: 0, unit: "minutes" },
     }));
   }
 

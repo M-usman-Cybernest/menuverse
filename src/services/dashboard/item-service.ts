@@ -50,42 +50,45 @@ export async function createItem(
 
   const newId = createId("item");
 
-  if (isDatabaseConfigured()) {
-    await connectToDatabase();
-    await MenuItemModel.create({
-      appId: newId,
+    const deliveryTime = input.deliveryTime ?? { value: 0, unit: "minutes" };
+    const prepTime = input.prepTime || `${deliveryTime.value} ${deliveryTime.unit}`;
+
+    if (isDatabaseConfigured()) {
+      await connectToDatabase();
+      await MenuItemModel.create({
+        appId: newId,
+        restaurantId: restaurant.id,
+        categoryId: input.categoryId,
+        name: input.name.trim(),
+        description: input.description.trim(),
+        price: input.price,
+        imageUrl: input.imageUrl,
+        arModelUrl: input.arModelUrl,
+        arModelIosUrl: input.arModelIosUrl,
+        dietaryTags: input.dietaryTags ?? [],
+        prepTime,
+        availableBranches: input.availableBranches ?? [],
+        deliveryTime,
+      });
+      return getItemsForRestaurant(restaurant.id);
+    }
+
+    const state = getMemoryState();
+    state.items.push({
+      id: newId,
       restaurantId: restaurant.id,
       categoryId: input.categoryId,
       name: input.name.trim(),
       description: input.description.trim(),
       price: input.price,
-      imageUrl: input.imageUrl,
+      imageUrl: input.imageUrl ?? "",
       arModelUrl: input.arModelUrl,
       arModelIosUrl: input.arModelIosUrl,
       dietaryTags: input.dietaryTags ?? [],
-      prepTime: input.prepTime ?? "15-20 min",
+      prepTime,
       availableBranches: input.availableBranches ?? [],
-      deliveryTime: input.deliveryTime ?? { value: 0, unit: "minutes" },
+      deliveryTime,
     });
-    return getItemsForRestaurant(restaurant.id);
-  }
-
-  const state = getMemoryState();
-  state.items.push({
-    id: newId,
-    restaurantId: restaurant.id,
-    categoryId: input.categoryId,
-    name: input.name.trim(),
-    description: input.description.trim(),
-    price: input.price,
-    imageUrl: input.imageUrl ?? "",
-    arModelUrl: input.arModelUrl,
-    arModelIosUrl: input.arModelIosUrl,
-    dietaryTags: input.dietaryTags ?? [],
-    prepTime: input.prepTime ?? "15-20 min",
-    availableBranches: input.availableBranches ?? [],
-    deliveryTime: input.deliveryTime ?? { value: 0, unit: "minutes" },
-  });
   return getItemsForRestaurant(restaurant.id);
 }
 
@@ -112,15 +115,20 @@ export async function updateItemById(
     }
   }
 
+  const updateData = { ...input };
+  if (updateData.deliveryTime && !updateData.prepTime) {
+    updateData.prepTime = `${updateData.deliveryTime.value} ${updateData.deliveryTime.unit}`;
+  }
+
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    await MenuItemModel.findOneAndUpdate({ appId: itemId }, { $set: input });
+    await MenuItemModel.findOneAndUpdate({ appId: itemId }, { $set: updateData });
     return getItemsForRestaurant(restaurant.id);
   }
 
   const state = getMemoryState();
   state.items = state.items.map((i) =>
-    i.id === itemId ? { ...i, ...input } : i,
+    i.id === itemId ? { ...i, ...updateData } : i,
   );
   return getItemsForRestaurant(restaurant.id);
 }

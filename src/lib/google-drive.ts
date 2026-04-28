@@ -98,7 +98,7 @@ export function getDriveDownloadUrl(fileId: string) {
 }
 
 export function getDriveImageUrl(fileId: string) {
-  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  return `https://lh3.googleusercontent.com/d/${fileId}`;
 }
 
 export function extractDriveFileId(url: string) {
@@ -124,9 +124,6 @@ export function resolveDriveUrl(
   if (url.includes("drive.google.com") || url.includes("docs.google.com")) {
     const fileId = extractDriveFileId(url);
     if (fileId) {
-      if (mode === "image") {
-        return getDriveImageUrl(fileId);
-      }
       return `/api/proxy/google-drive?id=${fileId}`;
     }
   }
