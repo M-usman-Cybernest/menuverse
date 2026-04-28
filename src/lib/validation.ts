@@ -89,6 +89,11 @@ const itemSchema = z.object({
   prepTime: z.string().trim().min(1),
   featured: z.boolean().optional(),
   qrCodeUrl: z.string().trim().optional(),
+  availableBranches: z.array(z.string()).default([]),
+  deliveryTime: z.object({
+    value: z.number().default(0),
+    unit: z.enum(["minutes", "hours", "days", "weeks", "months"]).default("minutes"),
+  }).optional(),
 });
 
 export const saveRestaurantSchema = z.object({
@@ -113,6 +118,11 @@ const itemInputSchema = z.object({
     .optional(),
   prepTime: z.string().trim().optional(),
   featured: z.boolean().optional(),
+  availableBranches: z.array(z.string()).default([]),
+  deliveryTime: z.object({
+    value: z.coerce.number().default(0),
+    unit: z.enum(["minutes", "hours", "days", "weeks", "months"]).default("minutes"),
+  }).optional(),
 });
 
 export const createItemSchema = itemInputSchema;

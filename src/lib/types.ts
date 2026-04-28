@@ -92,6 +92,11 @@ export type MenuItem = {
   prepTime: string;
   featured?: boolean;
   qrCodeUrl?: string;
+  availableBranches?: string[];
+  deliveryTime?: {
+    value: number;
+    unit: "minutes" | "hours" | "days" | "weeks" | "months";
+  };
 };
 
 export type RestaurantDataset = {

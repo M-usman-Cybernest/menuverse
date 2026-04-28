@@ -24,6 +24,11 @@ export async function createItem(
     arModelIosUrl?: string;
     dietaryTags?: DietaryTag[];
     prepTime?: string;
+    availableBranches?: string[];
+    deliveryTime?: {
+      value: number;
+      unit: "minutes" | "hours" | "days" | "weeks" | "months";
+    };
   },
 ) {
   const currentUser = await findUserById(currentSession.userId);
@@ -59,6 +64,8 @@ export async function createItem(
       arModelIosUrl: input.arModelIosUrl,
       dietaryTags: input.dietaryTags ?? [],
       prepTime: input.prepTime ?? "15-20 min",
+      availableBranches: input.availableBranches ?? [],
+      deliveryTime: input.deliveryTime ?? { value: 0, unit: "minutes" },
     });
     return getItemsForRestaurant(restaurant.id);
   }
@@ -76,6 +83,8 @@ export async function createItem(
     arModelIosUrl: input.arModelIosUrl,
     dietaryTags: input.dietaryTags ?? [],
     prepTime: input.prepTime ?? "15-20 min",
+    availableBranches: input.availableBranches ?? [],
+    deliveryTime: input.deliveryTime ?? { value: 0, unit: "minutes" },
   });
   return getItemsForRestaurant(restaurant.id);
 }

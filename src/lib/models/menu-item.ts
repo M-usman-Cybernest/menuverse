@@ -30,6 +30,11 @@ const menuItemSchema = new Schema(
     dietaryTags: [{ type: String }],
     prepTime: { type: String, trim: true },
     featured: { type: Boolean, default: false },
+    availableBranches: [{ type: String }],
+    deliveryTime: {
+      value: { type: Number, default: 0 },
+      unit: { type: String, enum: ["minutes", "hours", "days", "weeks", "months"], default: "minutes" },
+    },
   },
   {
     timestamps: true,
