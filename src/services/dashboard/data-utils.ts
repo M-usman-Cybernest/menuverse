@@ -62,6 +62,7 @@ export async function ensureSeeded() {
           passwordHash: "$2a$12$DUMMYHASH",
           role: "admin",
           subscriptionStatus: "active",
+          isVerified: true,
         });
 
         await RestaurantModel.create({
@@ -165,6 +166,7 @@ export type DbUserRecord = {
   passwordHash: string;
   role: UserRole;
   subscriptionStatus: TenantUser["subscriptionStatus"];
+  isVerified: boolean;
   createdAt?: Date;
 };
 
@@ -229,6 +231,8 @@ export async function findUserById(id: string) {
       email: record.email,
       role: record.role,
       subscriptionStatus: record.subscriptionStatus,
+      isVerified: record.isVerified ?? false,
+      passwordHash: record.passwordHash,
     } as TenantUser & { passwordHash: string };
   }
 

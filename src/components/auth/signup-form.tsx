@@ -52,9 +52,9 @@ export function SignupForm() {
     }
 
     if (!form.restaurantName.trim()) {
-      errors.restaurantName = "Restaurant name is required.";
+      errors.restaurantName = "Business Name is required.";
     } else if (form.restaurantName.trim().length < 2) {
-      errors.restaurantName = "Restaurant name must be at least 2 characters.";
+      errors.restaurantName = "Business Name must be at least 2 characters.";
     }
 
     setFieldErrors(errors);
@@ -147,7 +147,7 @@ export function SignupForm() {
             className={fieldErrors.password ? errorClass : ""}
           />
         </Field>
-        <Field label="Restaurant Name" error={fieldErrors.restaurantName}>
+        <Field label="Business Name" error={fieldErrors.restaurantName}>
           <Input
             value={form.restaurantName}
             onChange={(event) => {

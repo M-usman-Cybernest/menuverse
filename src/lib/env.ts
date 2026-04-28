@@ -27,6 +27,13 @@ export const env = {
     process.env.GOOGLE_DRIVE_CLIENT_SECRET?.trim() ?? "",
   googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID?.trim() ?? "",
   siteName: getEnvValue(process.env.NEXT_PUBLIC_SITE_NAME, "MenuVerse"),
+  smtp: {
+    host: getEnvValue(process.env.SMTP_HOST, ""),
+    port: parseInt(getEnvValue(process.env.SMTP_PORT, "587"), 10),
+    user: getEnvValue(process.env.SMTP_USER, ""),
+    password: getEnvValue(process.env.SMTP_PASSWORD, ""),
+    from: getEnvValue(process.env.SMTP_FROM, "MenuVerse <noreply@menuverse.test>"),
+  },
 };
 
 export function isDatabaseConfigured() {

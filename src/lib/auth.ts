@@ -45,3 +45,20 @@ export async function verifySessionToken(token: string) {
     return null;
   }
 }
+
+export async function signVerificationToken(userId: string) {
+  return new SignJWT({ userId })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("10m")
+    .sign(getJwtSecret());
+}
+
+export async function verifyVerificationToken(token: string) {
+  try {
+    const { payload } = await jwtVerify<{ userId: string }>(token, getJwtSecret());
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}

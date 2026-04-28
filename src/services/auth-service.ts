@@ -23,6 +23,7 @@ export async function findUserByEmail(email: string) {
       passwordHash: record.passwordHash,
       role: record.role,
       subscriptionStatus: record.subscriptionStatus,
+      isVerified: record.isVerified ?? false,
     };
   }
 

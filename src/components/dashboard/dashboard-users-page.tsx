@@ -121,7 +121,7 @@ export function DashboardUsersPage({
               </Select>
             </Field>
             {form.role === "owner" ? (
-              <Field label="Restaurant Name">
+              <Field label="Business Name">
                 <Input
                   value={form.restaurantName}
                   onChange={(event) =>

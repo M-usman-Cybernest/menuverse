@@ -175,7 +175,7 @@ export function DashboardSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
-              <Field label="Restaurant Name">
+              <Field label="Business Name">
                 <Input
                   value={restaurant.name}
                   onChange={(e) => updateRestaurantField("name", e.target.value)}

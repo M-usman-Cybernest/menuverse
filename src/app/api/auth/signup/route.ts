@@ -3,12 +3,20 @@ import { NextResponse } from "next/server";
 import { registerOwner } from "@/lib/menuverse-data";
 import { setSessionCookie } from "@/lib/session";
 import { signupSchema } from "@/lib/validation";
+import { sendWelcomeEmail } from "@/lib/mail";
+import { env } from "@/lib/env";
+import { signVerificationToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
     const json = await request.json();
     const payload = signupSchema.parse(json);
     const user = await registerOwner(payload);
+    
+    // Send welcome email with verification link (10 min expiry)
+    const token = await signVerificationToken(user.id);
+    const verificationUrl = `${env.appUrl}/api/auth/verify-email?token=${token}`;
+    await sendWelcomeEmail(user.email, user.name, verificationUrl);
 
     await setSessionCookie({
       userId: user.id,

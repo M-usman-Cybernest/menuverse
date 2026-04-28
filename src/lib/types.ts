@@ -8,7 +8,13 @@ export type DietaryTag =
   | "Halal"
   | "Spicy"
   | "Chef's Pick"
-  | "New";
+  | "New"
+  | "Bestseller"
+  | "Pre-order"
+  | "Eco-Friendly"
+  | "New Arrival"
+  | "Ships Fast"
+  | "Customizable";
 
 export type DayOfWeek =
   | "Monday"
@@ -25,6 +31,7 @@ export type TenantUser = {
   email: string;
   role: UserRole;
   subscriptionStatus: SubscriptionStatus;
+  isVerified: boolean;
   createdAt?: string;
 };
 

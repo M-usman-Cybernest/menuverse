@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CheckCircle2,
   CircleUserRound,
   LayoutDashboard,
   LogOut,
@@ -14,8 +15,9 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,6 +72,54 @@ export function DashboardShell({
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showVerifiedPopup, setShowVerifiedPopup] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      setShowVerifiedPopup(true);
+      // Clean up the URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
+      // Auto-hide after 3 seconds
+      const timer = setTimeout(() => {
+        setShowVerifiedPopup(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  async function handleResendEmail() {
+    if (resending || countdown > 0) return;
+
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+      });
+
+      if (!res.ok) throw new Error("Failed to resend");
+
+      setCountdown(60); // Start 60s cooldown
+    } catch (error) {
+      console.error(error);
+      alert("Failed to resend verification email. Please try again later.");
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function logout() {
     setLoggingOut(true);
@@ -222,21 +272,127 @@ export function DashboardShell({
                 </h1>
               </div>
             </div>
-            <div className="flex gap-2 lg:hidden">
-              {publicUrl ? (
-                <Button asChild size="sm" variant="outline">
-                  <a href={publicUrl} rel="noreferrer" target="_blank">
-                    Public Site
-                  </a>
-                </Button>
-              ) : null}
+            <div className="flex items-center gap-3">
+              
+              <div className="relative">
+                <button
+                  onClick={() => setUserMenuOpen((prev) => !prev)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f7f3eb] border border-[#e7dfd2] text-[#0f766e] transition-all hover:bg-[#0f766e] hover:text-white group"
+                >
+                  <CircleUserRound className="h-5 w-5" />
+                </button>
+
+                {userMenuOpen ? (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 z-20 w-56 origin-top-right rounded-xl border border-[#e7dfd2] bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
+                      <div className="px-3 py-2 border-b border-[#f3f4f6] mb-1">
+                        <p className="text-sm font-bold text-[#111827] truncate">
+                          {bundle.currentUser.name}
+                        </p>
+                        <p className="text-xs text-[#6b7280] truncate">
+                          {bundle.currentUser.email}
+                        </p>
+                      </div>
+                      
+                      <div className="p-1 space-y-1">
+                        <Link
+                          href="/dashboard/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-[#4b5563] rounded-lg hover:bg-[#f7f3eb] hover:text-[#111827] transition-colors"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                        <button
+                          onClick={() => {
+                            void logout();
+                            setUserMenuOpen(false);
+                          }}
+                          disabled={loggingOut}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          {loggingOut ? "Logging out..." : "Logout"}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <div className="p-4 sm:p-6">{children}</div>
+        <div className="p-4 sm:p-6">
+          {!bundle.currentUser.isVerified && (
+            <div className="mb-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-red-100 bg-red-50 p-4 sm:flex-row">
+              <div className="flex items-center gap-3 text-red-800">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+                  <Unplug className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Verify your email address</p>
+                  <p className="text-xs opacity-80">Check your inbox for a verification link to secure your account and unlock all features.</p>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                variant="secondary" 
+                className="w-full sm:w-auto min-w-[120px]"
+                onClick={handleResendEmail}
+                disabled={resending || countdown > 0}
+              >
+                {resending ? "Sending..." : countdown > 0 ? `Resend in ${countdown}s` : "Resend Email"}
+              </Button>
+            </div>
+          )}
+          
+          {children}
+        </div>
       </div>
+
+      <AnimatePresence>
+        {showVerifiedPopup && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowVerifiedPopup(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white p-8 text-center shadow-2xl"
+            >
+              <div className="mb-6 flex justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                  <CheckCircle2 className="h-10 w-10" />
+                </div>
+              </div>
+              <h2 className="mb-2 text-2xl font-bold text-[#111827]">
+                Account Verified!
+              </h2>
+              <p className="mb-8 text-sm text-[#6b7280]">
+                Your email has been successfully verified. You now have full access to all MenuVerse features.
+              </p>
+              <Button
+                onClick={() => setShowVerifiedPopup(false)}
+                className="w-full py-6 text-base font-bold shadow-lg shadow-emerald-100 transition-all hover:scale-[1.02]"
+              >
+                Continue to Dashboard
+              </Button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

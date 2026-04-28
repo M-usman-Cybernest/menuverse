@@ -31,6 +31,10 @@ const userSchema = new Schema(
       enum: ["admin", "owner", "staff"],
       default: "owner",
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     subscriptionStatus: {
       type: String,
       enum: ["trial", "active", "past_due"],

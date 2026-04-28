@@ -122,6 +122,7 @@ export async function listTeamMembers(currentSession: AuthSession) {
       email: user.email,
       role: user.role,
       subscriptionStatus: user.subscriptionStatus,
+      isVerified: user.isVerified ?? false,
       createdAt: user.createdAt?.toISOString() || undefined,
       restaurantId: restaurants.find((r) => r.ownerId === user.appId)?.appId || null,
     }));
@@ -174,6 +175,7 @@ export async function createTeamMember(
       passwordHash,
       role: input.role,
       subscriptionStatus: "trial",
+      isVerified: false,
     });
     return serializeUser({
       id: user.appId,
@@ -182,6 +184,7 @@ export async function createTeamMember(
       passwordHash: user.passwordHash,
       role: user.role,
       subscriptionStatus: user.subscriptionStatus,
+      isVerified: user.isVerified ?? false,
     } satisfies StoredUserRecord);
   }
 
@@ -193,6 +196,7 @@ export async function createTeamMember(
     passwordHash,
     role: input.role,
     subscriptionStatus: "trial",
+    isVerified: false,
     createdAt: new Date().toISOString(),
   } satisfies StoredUserRecord;
   state.users.push(user);
@@ -218,6 +222,7 @@ export async function registerOwner(input: {
       passwordHash,
       role: "owner",
       subscriptionStatus: "trial",
+      isVerified: false,
     });
 
     const existingRestaurants = await RestaurantModel.find({})
@@ -292,6 +297,7 @@ export async function registerOwner(input: {
       passwordHash: ownerRecord.passwordHash,
       role: ownerRecord.role,
       subscriptionStatus: ownerRecord.subscriptionStatus,
+      isVerified: ownerRecord.isVerified ?? false,
     } satisfies StoredUserRecord);
   }
 
@@ -303,6 +309,7 @@ export async function registerOwner(input: {
     passwordHash,
     role: "owner",
     subscriptionStatus: "trial",
+    isVerified: false,
     createdAt: new Date().toISOString(),
   } satisfies StoredUserRecord;
 
@@ -349,6 +356,7 @@ async function findUserByEmail(email: string) {
       passwordHash: record.passwordHash,
       role: record.role,
       subscriptionStatus: record.subscriptionStatus,
+      isVerified: record.isVerified ?? false,
       createdAt: record.createdAt?.toISOString(),
     } satisfies StoredUserRecord;
   }

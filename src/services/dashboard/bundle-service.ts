@@ -29,6 +29,7 @@ export function serializeUser(record: StoredUserRecord): TenantUser {
     email: record.email,
     role: record.role,
     subscriptionStatus: record.subscriptionStatus,
+    isVerified: record.isVerified,
     createdAt: record.createdAt,
   };
 }

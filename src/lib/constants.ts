@@ -8,6 +8,12 @@ export const DIETARY_TAGS = [
   "Spicy",
   "Chef's Pick",
   "New",
+  "Bestseller",
+  "Pre-order",
+  "Eco-Friendly",
+  "New Arrival",
+  "Ships Fast",
+  "Customizable",
 ] as const satisfies readonly DietaryTag[];
 
 export const WEEK_DAYS = [
