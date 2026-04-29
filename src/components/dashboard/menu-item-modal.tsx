@@ -298,7 +298,14 @@ export function MenuItemModal({
                   )}
                   {itemForm.imageUrl !== url && (
                     <button
-                      onClick={() => setItemForm(prev => ({ ...prev, imageUrl: url }))}
+                      onClick={() => setItemForm(prev => {
+                        const otherImages = (prev.imageUrls || []).filter(u => u !== url);
+                        return { 
+                          ...prev, 
+                          imageUrl: url,
+                          imageUrls: [url, ...otherImages]
+                        };
+                      })}
                       className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white text-center opacity-0 group-hover:opacity-100"
                     >
                       Make Primary

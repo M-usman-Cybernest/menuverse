@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock3, Eye, LocateFixed, Move3D, Store } from "lucide-react";
+import { Clock3, Eye, LocateFixed, Move3D, Search, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -43,6 +43,7 @@ export function PublicRestaurantPage({
   const [activeItemModalId, setActiveItemModalId] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -62,12 +63,25 @@ export function PublicRestaurantPage({
   }, [initialDataset]);
 
   const filteredSections = useMemo(() => {
-    if (activeCategoryId === "all") {
-      return sections;
+    const query = searchQuery.toLowerCase().trim();
+    
+    let baseSections = sections;
+    if (activeCategoryId !== "all") {
+      baseSections = sections.filter((section) => section.category.id === activeCategoryId);
     }
 
-    return sections.filter((section) => section.category.id === activeCategoryId);
-  }, [sections, activeCategoryId]);
+    if (!query) {
+      return baseSections;
+    }
+
+    return baseSections.map(section => ({
+      ...section,
+      items: section.items.filter(item => 
+        item.name.toLowerCase().includes(query) || 
+        (item.description && item.description.toLowerCase().includes(query))
+      )
+    })).filter(section => section.items.length > 0);
+  }, [sections, activeCategoryId, searchQuery]);
 
   const todayTiming = initialDataset?.restaurant.timings.find(
     (entry) => entry.day === getTodayLabel(),
@@ -204,7 +218,19 @@ export function PublicRestaurantPage({
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.16),rgba(17,24,39,0.88))]" />
           <div className="relative mx-auto flex min-h-[35vh] max-w-7xl flex-col justify-between gap-12 px-4 py-5 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="hidden md:flex flex-1 max-w-md">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
+                  <input
+                    type="text"
+                    placeholder="Search menu items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent transition-all backdrop-blur-sm"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 {authenticated ? (
                   <Button asChild size="sm" variant="secondary">
@@ -249,6 +275,18 @@ export function PublicRestaurantPage({
                 <p className="max-w-2xl text-base leading-7 text-white/80 sm:text-lg">
                   {initialDataset.restaurant.description}
                 </p>
+                <div className="md:hidden pt-2">
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
+                    <input
+                      type="text"
+                      placeholder="Search menu items..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent transition-all backdrop-blur-sm"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-3 text-sm text-white/80">
@@ -306,90 +344,113 @@ export function PublicRestaurantPage({
         </section>
 
         <section className="mx-auto max-w-7xl space-y-12 px-4 py-8 sm:px-6 lg:px-8">
-          {filteredSections.map(({ category, items }) => (
-            <div className="space-y-5" id={category.id} key={category.id}>
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
-                  {category.name}
-                </p>
-                <h2 className="text-2xl font-semibold tracking-tight text-[#111827]">
-                  {category.description}
-                </h2>
-              </div>
-              <div className="grid gap-6 md:grid-cols-2">
-                {items.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    className="h-full"
-                    initial={{ opacity: 0, y: 18 }}
-                    transition={{ duration: 0.24, ease: "easeOut" }}
-                    viewport={{ once: true, amount: 0.2 }}
-                    whileHover={{ y: -4 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                  >
-                    <Card className="flex min-h-[180px] h-full flex-row overflow-hidden rounded-xl border-[#e8dccb] bg-white hover:shadow-md transition-shadow">
-                      <CardContent className="flex flex-1 flex-col p-4 sm:p-6">
-                        <div className="space-y-1">
-                          <h3 className="text-lg font-bold tracking-tight text-[#111827] sm:text-xl">
-                            {item.name}
-                          </h3>
-                          <p className="text-base font-semibold text-[#0f766e]">
-                            from {formatPrice(item.price)}
+          {filteredSections.length > 0 ? (
+            filteredSections.map(({ category, items }) => (
+              <div className="space-y-5" id={category.id} key={category.id}>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#0f766e]">
+                    {category.name}
+                  </p>
+                  <h2 className="text-2xl font-semibold tracking-tight text-[#111827]">
+                    {category.description}
+                  </h2>
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  {items.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      className="h-full"
+                      initial={{ opacity: 0, y: 18 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                      viewport={{ once: true, amount: 0.2 }}
+                      whileHover={{ y: -4 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                    >
+                      <Card className="flex min-h-[180px] h-full flex-row overflow-hidden rounded-xl border-[#e8dccb] bg-white hover:shadow-md transition-shadow">
+                        <CardContent className="flex flex-1 flex-col p-4 sm:p-6">
+                          <div className="space-y-1">
+                            <h3 className="text-lg font-bold tracking-tight text-[#111827] sm:text-xl">
+                              {item.name}
+                            </h3>
+                            <p className="text-base font-semibold text-[#0f766e]">
+                              from {formatPrice(item.price)}
+                            </p>
+                          </div>
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b7280]">
+                            {item.description || "Freshly prepared for you."}
                           </p>
-                        </div>
-                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#6b7280]">
-                          {item.description || "Freshly prepared for you."}
-                        </p>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {item.dietaryTags.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag}
-                              className="text-[10px] px-2 py-0"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {item.dietaryTags.slice(0, 2).map((tag) => (
+                              <Badge
+                                key={tag}
+                                className="text-[10px] px-2 py-0"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
 
-                        <div className="mt-auto flex gap-2 pt-4">
-                          <Button
-                            className="h-10 w-10 rounded-full border-[#e8dccb] p-0"
-                            onClick={() => setActiveItemModalId(item.id)}
-                            type="button"
-                            variant="outline"
-                            title="View Item"
-                          >
-                            <Eye className="h-5 w-5 text-[#111827]" />
-                          </Button>
-                          {hasArAsset(item) ? (
+                          <div className="mt-auto flex gap-2 pt-4">
                             <Button
-                              className="h-10 w-10 rounded-full bg-[#0f766e] p-0 text-white hover:bg-[#0d6b63]"
-                              onClick={() => openArViewer(item.id)}
+                              className="h-10 w-10 rounded-full border-[#e8dccb] p-0"
+                              onClick={() => setActiveItemModalId(item.id)}
                               type="button"
-                              title="View in AR"
+                              variant="outline"
+                              title="View Item"
                             >
-                              <Move3D className="h-5 w-5" />
+                              <Eye className="h-5 w-5 text-[#111827]" />
                             </Button>
-                          ) : null}
-                        </div>
-                      </CardContent>
+                            {hasArAsset(item) ? (
+                              <Button
+                                className="h-10 w-10 rounded-full bg-[#0f766e] p-0 text-white hover:bg-[#0d6b63]"
+                                onClick={() => openArViewer(item.id)}
+                                type="button"
+                                title="View in AR"
+                              >
+                                <Move3D className="h-5 w-5" />
+                              </Button>
+                            ) : null}
+                          </div>
+                        </CardContent>
 
-                      <div className="flex w-1/3 items-center justify-center p-2 sm:w-2/5 sm:p-4">
-                        <div className="relative aspect-square w-full">
-                          <ImageSlider 
-                            images={item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : [item.imageUrl]} 
-                            alt={item.name}
-                            hasAr={hasArAsset(item)}
-                          />
+                        <div className="flex w-1/3 items-center justify-center p-2 sm:w-2/5 sm:p-4">
+                          <div className="relative aspect-square w-full">
+                            <ImageSlider 
+                              images={item.imageUrls && item.imageUrls.length > 0 
+                                ? (item.imageUrl 
+                                    ? [item.imageUrl, ...item.imageUrls.filter(u => u !== item.imageUrl)]
+                                    : item.imageUrls)
+                                : [item.imageUrl]} 
+                              alt={item.name}
+                              hasAr={hasArAsset(item)}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="rounded-full bg-[#fcfaf7] p-4 mb-4 border border-[#ece4d8]">
+                <Search className="h-8 w-8 text-[#0f766e]/40" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#111827]">No items found</h3>
+              <p className="text-[#6b7280] mt-1 max-w-xs">
+                We couldn&apos;t find anything matching &quot;{searchQuery}&quot;. Try a different term or clear the search.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-6 border-[#e8dccb]"
+                onClick={() => setSearchQuery("")}
+              >
+                Clear Search
+              </Button>
             </div>
-          ))}
+          )}
         </section>
 
         <section className="border-t border-[#ece4d8] bg-[#fffaf2]">
@@ -517,7 +578,11 @@ export function PublicRestaurantPage({
             <div className="w-full md:w-[45%]">
               <div className="relative aspect-square w-full">
                 <ImageSlider 
-                  images={activeModalItem.imageUrls && activeModalItem.imageUrls.length > 0 ? activeModalItem.imageUrls : [activeModalItem.imageUrl]} 
+                  images={activeModalItem.imageUrls && activeModalItem.imageUrls.length > 0 
+                    ? (activeModalItem.imageUrl 
+                        ? [activeModalItem.imageUrl, ...activeModalItem.imageUrls.filter(u => u !== activeModalItem.imageUrl)]
+                        : activeModalItem.imageUrls)
+                    : [activeModalItem.imageUrl]} 
                   alt={activeModalItem.name}
                   hasAr={hasArAsset(activeModalItem)}
                   className="rounded-2xl shadow-inner border border-[#e8dccb]"
