@@ -93,6 +93,7 @@ export type MenuItem = {
   description: string;
   price: number;
   imageUrl: string;
+  imageUrls?: string[];
   arModelUrl?: string;
   arModelIosUrl?: string;
   dietaryTags: DietaryTag[];

@@ -20,6 +20,7 @@ export async function createItem(
     description: string;
     price: number;
     imageUrl?: string;
+    imageUrls?: string[];
     arModelUrl?: string;
     arModelIosUrl?: string;
     dietaryTags?: DietaryTag[];
@@ -63,6 +64,7 @@ export async function createItem(
         description: input.description.trim(),
         price: input.price,
         imageUrl: input.imageUrl,
+        imageUrls: input.imageUrls ?? [],
         arModelUrl: input.arModelUrl,
         arModelIosUrl: input.arModelIosUrl,
         dietaryTags: input.dietaryTags ?? [],
@@ -82,6 +84,7 @@ export async function createItem(
       description: input.description.trim(),
       price: input.price,
       imageUrl: input.imageUrl ?? "",
+      imageUrls: input.imageUrls ?? [],
       arModelUrl: input.arModelUrl,
       arModelIosUrl: input.arModelIosUrl,
       dietaryTags: input.dietaryTags ?? [],

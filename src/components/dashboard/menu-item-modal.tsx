@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Info, Package, Upload } from "lucide-react";
+import { ImagePlus, Info, Package, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -23,6 +23,7 @@ export type ItemForm = {
   description: string;
   price: number;
   imageUrl: string;
+  imageUrls: string[];
   arModelUrl: string;
   arModelIosUrl: string;
   categoryId: string;
@@ -38,6 +39,7 @@ export const EMPTY_ITEM: ItemForm = {
   description: "",
   price: 0,
   imageUrl: "",
+  imageUrls: [],
   arModelUrl: "",
   arModelIosUrl: "",
   categoryId: "",
@@ -135,14 +137,26 @@ export function MenuItemModal({
         result = { message: text };
       }
 
+      if (response.status === 429) {
+        throw new Error("Too many requests. Please wait a moment and try again.");
+      }
+
       if (!response.ok || !result?.url) {
         throw new Error(result?.message || "Upload failed.");
       }
 
-      setItemForm((prev) => ({
-        ...prev,
-        [target]: result.url,
-      }));
+      if (type === "image") {
+        setItemForm((prev) => ({
+          ...prev,
+          imageUrls: [...prev.imageUrls, result.url].slice(0, 5),
+          imageUrl: prev.imageUrl || result.url, // Set primary if none exists
+        }));
+      } else {
+        setItemForm((prev) => ({
+          ...prev,
+          [target]: result.url,
+        }));
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Upload failed. Please retry.";
       errorSetter(message);
@@ -172,6 +186,7 @@ export function MenuItemModal({
       categoryId: itemForm.categoryId,
       description: itemForm.description.trim(),
       imageUrl: itemForm.imageUrl || undefined,
+      imageUrls: itemForm.imageUrls,
       name: itemForm.name.trim(),
       price: itemForm.price,
       availableBranches: itemForm.availableBranches,
@@ -251,69 +266,100 @@ export function MenuItemModal({
           </select>
         </Field>
 
-        <Field label="Item Image">
-          <div className="flex flex-col gap-4 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4 lg:flex-row">
-            {itemForm.imageUrl ? (
-              <div className="relative h-32 w-full overflow-hidden rounded-lg border border-[#ece4d8] bg-white lg:w-44">
-                <Image
-                  alt="Item preview"
-                  className="object-cover"
-                  fill
-                  sizes="176px"
-                  src={resolveDriveUrl(itemForm.imageUrl, "image")}
-                />
-              </div>
-            ) : null}
-            <div className="flex-1">
+        <Field 
+          label="Item Gallery" 
+          infoText="You can add up to 5 images for this item. These will be used for the product showcase."
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+              {(itemForm.imageUrls || []).map((url, index) => (
+                <div key={index} className="group relative aspect-square w-full overflow-hidden rounded-lg border border-[#ece4d8] bg-white">
+                  <Image
+                    alt={`Preview ${index + 1}`}
+                    className="object-cover"
+                    fill
+                    sizes="120px"
+                    src={resolveDriveUrl(url, "image")}
+                  />
+                  <button
+                    onClick={() => setItemForm(prev => ({
+                      ...prev,
+                      imageUrls: (prev.imageUrls || []).filter((_, i) => i !== index),
+                      imageUrl: prev.imageUrl === url ? ((prev.imageUrls || [])[index + 1] || (prev.imageUrls || [])[index - 1] || "") : prev.imageUrl
+                    }))}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  {itemForm.imageUrl === url && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-[#0f766e]/80 px-2 py-0.5 text-[10px] font-bold text-white text-center">
+                      Primary
+                    </div>
+                  )}
+                  {itemForm.imageUrl !== url && (
+                    <button
+                      onClick={() => setItemForm(prev => ({ ...prev, imageUrl: url }))}
+                      className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white text-center opacity-0 group-hover:opacity-100"
+                    >
+                      Make Primary
+                    </button>
+                  )}
+                </div>
+              ))}
+              
+              {(itemForm.imageUrls || []).length < 5 && (
+                <button
+                  className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
+                  disabled={uploading}
+                  onClick={() => imageInputRef.current?.click()}
+                  type="button"
+                >
+                  {uploading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0f766e] border-t-transparent" />
+                  ) : (
+                    <>
+                      <ImagePlus className="h-5 w-5" />
+                      <span className="text-[10px]">Add Image</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-medium text-[#6b7280]">
+                {(itemForm.imageUrls || []).length}/5 images uploaded
+              </p>
               <input
                 accept="image/*"
                 className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) {
-                    void uploadFile(file, "image");
+                multiple
+                onChange={async (event) => {
+                  const files = event.target.files;
+                  if (files) {
+                    const filesArray = Array.from(files).slice(0, 5 - (itemForm.imageUrls || []).length);
+                    // Process each file sequentially to avoid 429 errors
+                    for (const file of filesArray) {
+                      await uploadFile(file, "image");
+                    }
                   }
                   event.target.value = "";
                 }}
                 ref={imageInputRef}
                 type="file"
               />
-              <button
-                className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white px-4 py-6 text-sm text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
-                disabled={uploading}
-                onClick={() => {
-                  if (
-                    ensureGoogleDriveConnected(
-                      "Connect your Google account before uploading images."
-                    )
-                  ) {
-                    imageInputRef.current?.click();
-                  }
-                }}
-                type="button"
-              >
-                {uploading ? (
-                  <span className="animate-pulse">Uploading to Google Drive...</span>
-                ) : (
-                  <>
-                    <ImagePlus className="h-5 w-5" />
-                    <span>Upload image to Google Drive</span>
-                  </>
-                )}
-              </button>
+              <Input
+                onChange={(event) =>
+                  setItemForm((previous) => ({
+                    ...previous,
+                    imageUrl: event.target.value,
+                  }))
+                }
+                placeholder="Primary image URL (direct link)"
+                value={itemForm.imageUrl}
+              />
             </div>
           </div>
-          <Input
-            className="mt-3"
-            onChange={(event) =>
-              setItemForm((previous) => ({
-                ...previous,
-                imageUrl: event.target.value,
-              }))
-            }
-            placeholder="https://drive.google.com/file/d/... or direct image URL"
-            value={itemForm.imageUrl}
-          />
           {imageError && (
             <p className="mt-2 text-xs font-medium text-[#c2410c]">
               {imageError}

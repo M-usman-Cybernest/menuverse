@@ -252,6 +252,7 @@ export function DashboardMenuPage() {
       categoryId: item.categoryId,
       description: item.description,
       imageUrl: item.imageUrl,
+      imageUrls: item.imageUrls || [],
       name: item.name,
       price: item.price,
       availableBranches: item.availableBranches || [],
@@ -423,7 +424,7 @@ export function DashboardMenuPage() {
                             className="object-cover"
                             fill
                             sizes="56px"
-                            src={resolveDriveUrl(item.imageUrl, "image")}
+                            src={resolveDriveUrl(item.imageUrl || (item.imageUrls && item.imageUrls[0]) || "", "image")}
                           />
                         </div>
                       </td>

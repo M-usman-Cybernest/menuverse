@@ -124,6 +124,7 @@ export async function saveRestaurantBundle(
       description: it.description,
       price: it.price,
       imageUrl: it.imageUrl,
+      imageUrls: it.imageUrls,
       arModelUrl: it.arModelUrl,
       arModelIosUrl: it.arModelIosUrl,
       dietaryTags: it.dietaryTags,

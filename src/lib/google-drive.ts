@@ -121,7 +121,11 @@ export function resolveDriveUrl(
     return "";
   }
 
-  if (url.includes("drive.google.com") || url.includes("docs.google.com")) {
+  if (
+    url.includes("drive.google.com") || 
+    url.includes("docs.google.com") ||
+    url.includes("lh3.googleusercontent.com")
+  ) {
     const fileId = extractDriveFileId(url);
     if (fileId) {
       return `/api/proxy/google-drive?id=${fileId}`;

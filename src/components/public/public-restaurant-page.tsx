@@ -17,6 +17,7 @@ import { resolveDriveUrl } from "@/lib/google-drive";
 import { hasArAsset } from "@/lib/storage";
 import type { MenuItem, RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
+import { ImageSlider } from "./image-slider";
 
 type PublicRestaurantPageProps = {
   authenticated?: boolean;
@@ -375,21 +376,12 @@ export function PublicRestaurantPage({
                       </CardContent>
 
                       <div className="flex w-1/3 items-center justify-center p-2 sm:w-2/5 sm:p-4">
-                        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[#f8f9fa]">
-                          <Image
+                        <div className="relative aspect-square w-full">
+                          <ImageSlider 
+                            images={item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : [item.imageUrl]} 
                             alt={item.name}
-                            className="object-cover"
-                            fill
-                            sizes="(max-width: 768px) 33vw, 20vw"
-                            src={resolveDriveUrl(item.imageUrl, "image")}
+                            hasAr={hasArAsset(item)}
                           />
-                          {hasArAsset(item) && (
-                            <div className="absolute right-2 top-2">
-                              <div className="rounded-xl bg-[#0f766e] p-1 text-white shadow-lg">
-                                <Move3D className="h-3 w-3" />
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </Card>
@@ -523,21 +515,13 @@ export function PublicRestaurantPage({
             </div>
 
             <div className="w-full md:w-[45%]">
-              <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-[#e8dccb] bg-white shadow-inner">
-                <Image
+              <div className="relative aspect-square w-full">
+                <ImageSlider 
+                  images={activeModalItem.imageUrls && activeModalItem.imageUrls.length > 0 ? activeModalItem.imageUrls : [activeModalItem.imageUrl]} 
                   alt={activeModalItem.name}
-                  className="object-cover"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 40vw"
-                  src={resolveDriveUrl(activeModalItem.imageUrl, "image")}
+                  hasAr={hasArAsset(activeModalItem)}
+                  className="rounded-2xl shadow-inner border border-[#e8dccb]"
                 />
-                {hasArAsset(activeModalItem) && (
-                  <div className="absolute right-4 top-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-white shadow-lg">
-                      <Move3D className="h-5 w-5" />
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

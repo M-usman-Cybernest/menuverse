@@ -205,6 +205,7 @@ export type DbItemRecord = {
   description: string;
   price: number;
   imageUrl: string;
+  imageUrls?: string[];
   arModelUrl?: string;
   arModelIosUrl?: string;
   qrCodeUrl?: string;
@@ -302,6 +303,7 @@ export async function getItemsForRestaurant(restaurantId: string) {
       description: r.description,
       price: r.price,
       imageUrl: r.imageUrl,
+      imageUrls: r.imageUrls ?? [],
       arModelUrl: r.arModelUrl,
       arModelIosUrl: r.arModelIosUrl,
       qrCodeUrl: r.qrCodeUrl,

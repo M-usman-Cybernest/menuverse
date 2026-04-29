@@ -24,6 +24,7 @@ const menuItemSchema = new Schema(
     description: { type: String, trim: true },
     price: { type: Number, required: true, min: 0 },
     imageUrl: { type: String, trim: true },
+    imageUrls: [{ type: String }],
     arModelUrl: { type: String, trim: true },
     arModelIosUrl: { type: String, trim: true },
     qrCodeUrl: { type: String, trim: true },

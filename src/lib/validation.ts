@@ -78,6 +78,7 @@ const itemSchema = z.object({
   description: z.string().trim().default(""),
   price: z.number().min(0),
   imageUrl: z.string().trim().min(1),
+  imageUrls: z.array(z.string()).optional(),
   arModelUrl: z.string().trim().optional(),
   arModelIosUrl: z.string().trim().optional(),
   dietaryTags: z
@@ -108,6 +109,7 @@ const itemInputSchema = z.object({
   description: z.string().trim().default(""),
   price: z.coerce.number().min(0),
   imageUrl: z.string().trim().optional(),
+  imageUrls: z.array(z.string()).optional(),
   arModelUrl: z.string().trim().optional(),
   arModelIosUrl: z.string().trim().optional(),
   dietaryTags: z
