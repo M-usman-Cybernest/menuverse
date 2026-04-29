@@ -128,10 +128,7 @@ export function resolveDriveUrl(
   ) {
     const fileId = extractDriveFileId(url);
     if (fileId) {
-      if (mode === "image") {
-        return `/api/proxy/google-drive?id=${fileId}`;
-      }
-      return getDriveDownloadUrl(fileId);
+      return `/api/proxy/google-drive?id=${fileId}`;
     }
   }
 
