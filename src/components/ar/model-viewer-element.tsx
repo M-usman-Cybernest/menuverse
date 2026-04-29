@@ -32,9 +32,7 @@ type ModelViewerDomElement = HTMLElement & {
   getCameraOrbit: () => CameraOrbit;
 };
 
-const DEFAULT_CAMERA_ORBIT = "0deg 75deg 105%";
-const MIN_CAMERA_ORBIT = "auto auto 50%";
-const MAX_CAMERA_ORBIT = "auto auto 300%";
+const DEFAULT_CAMERA_ORBIT = "auto auto auto";
 export function ModelViewerElement({ item }: ModelViewerElementProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const modelViewerRef = useRef<ModelViewerDomElement | null>(null);
@@ -109,14 +107,11 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         auto-rotate={autoRotate ? "" : undefined}
         camera-controls
         camera-orbit={DEFAULT_CAMERA_ORBIT}
-        min-camera-orbit={MIN_CAMERA_ORBIT}
-        max-camera-orbit={MAX_CAMERA_ORBIT}
-        interaction-prompt="auto"
         environment-image="neutral"
         exposure="1.0"
         interpolation-decay="120"
         interaction-prompt-style="wiggle"
-        ios-src={`${resolveDriveUrl(item.arModelIosUrl) || ""}#allowsContentScaling=1`}
+        ios-src={resolveDriveUrl(item.arModelIosUrl) || undefined}
         poster={resolveDriveUrl(item.imageUrl, "image") || undefined}
         shadow-intensity="1"
         src={resolveDriveUrl(item.arModelUrl) || undefined}
