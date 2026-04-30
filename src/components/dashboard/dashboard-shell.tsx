@@ -226,7 +226,7 @@ export function DashboardShell({
                 {bundle.currentUser.name}
               </p>
               <p className="truncate text-xs text-[#6b7280]">
-                {bundle.currentUser.email}
+                {bundle.currentUser.email || bundle.currentUser.phone}
               </p>
             </div>
           </div>
@@ -294,7 +294,7 @@ export function DashboardShell({
                           {bundle.currentUser.name}
                         </p>
                         <p className="text-xs text-[#6b7280] truncate">
-                          {bundle.currentUser.email}
+                          {bundle.currentUser.email || bundle.currentUser.phone}
                         </p>
                       </div>
                       
@@ -329,7 +329,7 @@ export function DashboardShell({
 
         {/* Page content */}
         <div className="p-4 sm:p-6">
-          {!bundle.currentUser.isVerified && (
+          {!bundle.currentUser.isVerified && bundle.currentUser.email && (
             <div className="mb-6 flex flex-col items-center justify-between gap-4 rounded-xl border border-red-100 bg-red-50 p-4 sm:flex-row">
               <div className="flex items-center gap-3 text-red-800">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">

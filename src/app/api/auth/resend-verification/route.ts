@@ -25,6 +25,13 @@ export async function POST() {
     const token = await signVerificationToken(user.id);
     const verificationUrl = `${env.appUrl}/api/auth/verify-email?token=${token}`;
 
+    if (!user.email) {
+      return NextResponse.json(
+        { message: "This account does not have an associated email address." },
+        { status: 400 }
+      );
+    }
+
     // Send the email
     await sendWelcomeEmail(user.email, user.name, verificationUrl);
 

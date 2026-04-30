@@ -67,7 +67,7 @@ export function DashboardOverview() {
               />
               <InfoBlock
                 label="Support"
-                value={restaurant?.supportEmail ?? bundle.currentUser.email}
+                value={restaurant?.supportEmail ?? bundle.currentUser.email ?? bundle.currentUser.phone ?? "No contact set"}
               />
             </div>
             <div className="flex flex-wrap gap-2">

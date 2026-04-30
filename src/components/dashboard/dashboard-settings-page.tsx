@@ -710,7 +710,7 @@ export function DashboardSettingsPage() {
               <div className="space-y-3 rounded-lg border border-[#ece4d8] bg-[#fffcf8] p-4">
                 <InfoRow label="Name" value={bundle.currentUser.name} />
                 <div className="border-t border-[#ece4d8]" />
-                <InfoRow label="Email" value={bundle.currentUser.email} />
+                <InfoRow label={bundle.currentUser.email ? "Email" : "Phone"} value={bundle.currentUser.email || bundle.currentUser.phone || "Not set"} />
                 <div className="border-t border-[#ece4d8]" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[#6b7280]">Role</span>
@@ -797,7 +797,7 @@ function Field({
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string | undefined }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-[#6b7280]">{label}</span>

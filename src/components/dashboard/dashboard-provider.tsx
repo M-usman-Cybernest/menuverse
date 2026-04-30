@@ -107,7 +107,7 @@ function createDefaultRestaurantBundle(bundle: DashboardBundle): DashboardBundle
       cuisineLabel: "Modern Dining",
       locationLabel: "Add your location",
       locationMapsUrl: "https://maps.google.com",
-      supportEmail: bundle.currentUser.email,
+      supportEmail: bundle.currentUser.email || "",
       isPublished: true,
       timings: WEEK_DAYS.map((day) => ({
         day,

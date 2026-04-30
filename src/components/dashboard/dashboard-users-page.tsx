@@ -161,7 +161,7 @@ export function DashboardUsersPage({
               >
                 <div className="space-y-1">
                   <p className="font-semibold">{user.name}</p>
-                  <p className="text-sm text-[#6b7280]">{user.email}</p>
+                  <p className="text-sm text-[#6b7280]">{user.email || user.phone}</p>
                 </div>
                 <div className="flex gap-2">
                   <Badge variant="accent">{user.role}</Badge>
