@@ -187,6 +187,7 @@ export type DbRestaurantRecord = {
   isPublished: boolean;
   branches: RestaurantProfile["branches"];
   timings: RestaurantProfile["timings"];
+  announcementBar?: RestaurantProfile["announcementBar"];
 };
 
 export type DbCategoryRecord = {
@@ -334,6 +335,7 @@ function mapDbRestaurant(record: DbRestaurantRecord): RestaurantProfile {
     locationMapsUrl: record.locationMapsUrl,
     supportEmail: record.supportEmail,
     isPublished: record.isPublished,
+    announcementBar: record.announcementBar ?? { text: "", show: false },
     branches: record.branches ?? [],
     timings: record.timings ?? [],
   };

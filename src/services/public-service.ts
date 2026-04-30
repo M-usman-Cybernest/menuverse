@@ -38,6 +38,7 @@ export async function findRestaurantBySlug(slug: string) {
       locationMapsUrl: record.locationMapsUrl,
       supportEmail: record.supportEmail,
       isPublished: record.isPublished,
+      announcementBar: record.announcementBar ?? { text: "", show: false },
       branches: record.branches ?? [],
       timings: record.timings ?? [],
     } satisfies RestaurantProfile;

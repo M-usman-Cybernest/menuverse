@@ -18,6 +18,7 @@ import { hasArAsset } from "@/lib/storage";
 import type { MenuItem, RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
 import { ImageSlider } from "./image-slider";
+import { AnnouncementBar } from "./announcement-bar";
 
 type PublicRestaurantPageProps = {
   authenticated?: boolean;
@@ -206,6 +207,9 @@ export function PublicRestaurantPage({
 
   return (
     <>
+      {initialDataset.restaurant.announcementBar && (
+        <AnnouncementBar data={initialDataset.restaurant.announcementBar} />
+      )}
       <main className="bg-[#fcfaf7] text-[#1f2937]">
         <section className="relative overflow-hidden bg-[#111827] text-white">
           <Image

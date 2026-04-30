@@ -53,6 +53,7 @@ export function DashboardSettingsPage() {
     saving,
     updateBranch,
     updateRestaurantField,
+    updateAnnouncementBar,
     updateTiming,
   } = useDashboard();
 
@@ -315,6 +316,52 @@ export function DashboardSettingsPage() {
                     {restaurant.isPublished ? "Published" : "Hidden"}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Announcement Bar */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Announcement Bar</CardTitle>
+                <CardDescription>
+                  Display a message at the top of your site (e.g. &quot;20% Discount Today&quot;).
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3 mb-2">
+                  <div>
+                    <p className="font-medium text-[#111827]">Show Announcement</p>
+                    <p className="text-sm text-[#6b7280]">
+                      Toggle visibility on the public site.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      updateAnnouncementBar(
+                        "show",
+                        !restaurant.announcementBar?.show
+                      )
+                    }
+                    type="button"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${restaurant.announcementBar?.show ? "bg-[#0f766e]" : "bg-[#d9cdbb]"
+                      }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${restaurant.announcementBar?.show ? "translate-x-5" : "translate-x-0"
+                        }`}
+                    />
+                  </button>
+                </div>
+                
+                <Field label="Announcement Text">
+                  <Input
+                    placeholder="e.g. 20% Discount Today"
+                    value={restaurant.announcementBar?.text || ""}
+                    onChange={(e) =>
+                      updateAnnouncementBar("text", e.target.value)
+                    }
+                  />
+                </Field>
               </CardContent>
             </Card>
           </div>

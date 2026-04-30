@@ -49,6 +49,10 @@ const restaurantSchema = new Schema(
     locationMapsUrl: { type: String, trim: true },
     supportEmail: { type: String, trim: true, lowercase: true },
     isPublished: { type: Boolean, default: true },
+    announcementBar: {
+      text: { type: String, default: "" },
+      show: { type: Boolean, default: false },
+    },
     branches: [branchSchema],
     timings: [timingSchema],
   },

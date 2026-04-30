@@ -47,6 +47,7 @@ type DashboardContextValue = {
     key: "open" | "close" | "closed",
     value: string | boolean,
   ) => void;
+  updateAnnouncementBar: (key: "text" | "show", value: string | boolean) => void;
   addBranch: () => void;
   updateBranch: (
     branchId: string,
@@ -237,6 +238,26 @@ export function DashboardProvider({
           timings: current.restaurant.timings.map((timing) =>
             timing.day === day ? { ...timing, [key]: value } : timing,
           ),
+        },
+      };
+    });
+  }
+
+  function updateAnnouncementBar(key: "text" | "show", value: string | boolean) {
+    setBundle((current) => {
+      if (!current.restaurant) {
+        return current;
+      }
+
+      return {
+        ...current,
+        restaurant: {
+          ...current.restaurant,
+          announcementBar: {
+            text: current.restaurant.announcementBar?.text ?? "",
+            show: current.restaurant.announcementBar?.show ?? false,
+            [key]: value,
+          },
         },
       };
     });
@@ -697,6 +718,7 @@ export function DashboardProvider({
     saveSuccess,
     updateRestaurantField,
     updateTiming,
+    updateAnnouncementBar,
     addBranch,
     updateBranch,
     removeBranch,

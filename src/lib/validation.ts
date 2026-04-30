@@ -58,6 +58,10 @@ const restaurantSchema = z.object({
   locationMapsUrl: z.string().trim().url(),
   supportEmail: z.email(),
   isPublished: z.boolean(),
+  announcementBar: z.object({
+    text: z.string().trim(),
+    show: z.boolean(),
+  }).optional(),
   timings: z.array(timingSchema),
   branches: z.array(branchSchema),
 });

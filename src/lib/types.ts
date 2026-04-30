@@ -59,6 +59,11 @@ export type OperatingWindow = {
   closed?: boolean;
 };
 
+export type AnnouncementBar = {
+  text: string;
+  show: boolean;
+};
+
 export type RestaurantProfile = {
   id: string;
   ownerId: string;
@@ -73,6 +78,7 @@ export type RestaurantProfile = {
   locationMapsUrl: string;
   supportEmail: string;
   isPublished: boolean;
+  announcementBar?: AnnouncementBar;
   timings: OperatingWindow[];
   branches: Branch[];
 };
