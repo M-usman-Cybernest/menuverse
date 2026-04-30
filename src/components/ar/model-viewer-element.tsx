@@ -11,7 +11,6 @@ import {
 import { type ReactNode, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { resolveDriveUrl } from "@/lib/google-drive";
 import type { MenuItem } from "@/lib/types";
 
@@ -100,11 +99,6 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
       ref={wrapperRef}
       style={{ touchAction: "none" }}
     >
-      {!isLoaded && (
-        <div className="absolute inset-0 z-10">
-          <Skeleton className="h-full w-full rounded-none" />
-        </div>
-      )}
       {/* @ts-expect-error model-viewer is a web component */}
       <model-viewer
         alt={item.name}
@@ -136,7 +130,7 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
         }}
       >
         <Button
-          className={`absolute inset-x-4 bottom-4 font-semibold shadow-lg transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
+          className="absolute inset-x-4 bottom-4 font-semibold shadow-lg"
           size="lg"
           slot="ar-button"
           type="button"
@@ -147,46 +141,44 @@ export function ModelViewerElement({ item }: ModelViewerElementProps) {
       </model-viewer>
 
       {/* Controls overlay */}
-      {isLoaded && (
-        <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap justify-between gap-2">
-          <div className="pointer-events-auto rounded-full border border-white/60 bg-white/92 p-1 shadow-lg backdrop-blur">
-            <div className="flex items-center gap-1">
-              <IconActionButton
-                ariaLabel="Reset view"
-                icon={<RotateCcw className="h-4 w-4" />}
-                onClick={handleResetView}
-              />
-            </div>
-          </div>
-
-          <div className="pointer-events-auto rounded-full border border-white/60 bg-white/92 p-1 shadow-lg backdrop-blur">
-            <div className="flex items-center gap-1">
-              <IconActionButton
-                ariaLabel={autoRotate ? "Pause rotation" : "Start rotation"}
-                icon={
-                  autoRotate ? (
-                    <Pause className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )
-                }
-                onClick={() => setAutoRotate((current) => !current)}
-              />
-              <IconActionButton
-                ariaLabel={isFullscreen ? "Exit fullscreen" : "Open fullscreen"}
-                icon={
-                  isFullscreen ? (
-                    <Minimize className="h-4 w-4" />
-                  ) : (
-                    <Expand className="h-4 w-4" />
-                  )
-                }
-                onClick={() => void toggleFullscreen()}
-              />
-            </div>
+      <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap justify-between gap-2">
+        <div className="pointer-events-auto rounded-full border border-white/60 bg-white p-1 shadow-lg backdrop-blur-sm">
+          <div className="flex items-center gap-1">
+            <IconActionButton
+              ariaLabel="Reset view"
+              icon={<RotateCcw className="h-4 w-4" />}
+              onClick={handleResetView}
+            />
           </div>
         </div>
-      )}
+
+        <div className="pointer-events-auto rounded-full border border-white/60 bg-white p-1 shadow-lg backdrop-blur-sm">
+          <div className="flex items-center gap-1">
+            <IconActionButton
+              ariaLabel={autoRotate ? "Pause rotation" : "Start rotation"}
+              icon={
+                autoRotate ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )
+              }
+              onClick={() => setAutoRotate((current) => !current)}
+            />
+            <IconActionButton
+              ariaLabel={isFullscreen ? "Exit fullscreen" : "Open fullscreen"}
+              icon={
+                isFullscreen ? (
+                  <Minimize className="h-4 w-4" />
+                ) : (
+                  <Expand className="h-4 w-4" />
+                )
+              }
+              onClick={() => void toggleFullscreen()}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
