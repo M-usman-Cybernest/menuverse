@@ -37,7 +37,7 @@ export function DashboardProfilePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#0f766e]">
-            Restaurant Profile
+            Business Profile
           </p>
           <h2 className="text-2xl font-semibold tracking-tight">
             Brand and publishing
@@ -52,9 +52,9 @@ export function DashboardProfilePage() {
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Restaurant details</CardTitle>
+            <CardTitle>Business Details</CardTitle>
             <CardDescription>
-              Everything that appears on the public page and restaurant QR
+              Everything that appears on the public page and business QR
               destination.
             </CardDescription>
           </CardHeader>
@@ -73,7 +73,7 @@ export function DashboardProfilePage() {
                 onChange={(event) =>
                   updateRestaurantField(
                     "slug",
-                    slugify(event.target.value) || "restaurant",
+                    slugify(event.target.value) || "business",
                   )
                 }
               />
@@ -153,7 +153,7 @@ export function DashboardProfilePage() {
             <CardHeader>
               <CardTitle>Publishing state</CardTitle>
               <CardDescription>
-                Toggle whether the restaurant should be publicly visible.
+                Toggle whether the Business should be publicly visible.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

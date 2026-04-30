@@ -51,11 +51,11 @@ export function DashboardOverview() {
                 Public Experience
               </Badge>
               <h2 className="text-2xl font-semibold tracking-tight">
-                {restaurant?.name ?? "MenuVerse Restaurant"}
+                {restaurant?.name ?? "Your Business Name"}
               </h2>
               <p className="max-w-2xl text-sm leading-6 text-white/75">
                 {restaurant?.heroNote ??
-                  "The dashboard is ready. Add your real restaurant details, then publish and share."}
+                  "The dashboard is ready. Add your real business details, then publish and share."}
               </p>
             </div>
           </div>

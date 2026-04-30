@@ -13,7 +13,7 @@ export async function GET(_: Request, { params }: RouteContext) {
   const dataset = await getRestaurantDatasetBySlug(slug);
 
   if (!dataset) {
-    return NextResponse.json({ message: "Restaurant not found." }, { status: 404 });
+    return NextResponse.json({ message: "This Business not found." }, { status: 404 });
   }
 
   return NextResponse.json(dataset, { status: 200 });

@@ -4,7 +4,7 @@ import { jwtVerify, SignJWT } from "jose";
 import { env } from "@/lib/env";
 import type { AuthSession } from "@/lib/types";
 
-export const SESSION_COOKIE_NAME = "menuverse_session";
+export const SESSION_COOKIE_NAME = `${env.siteName.toLowerCase().replace(/\s+/g, "_")}_session`;
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 function getJwtSecret() {

@@ -275,7 +275,7 @@ export async function uploadFileToGoogleDrive(
   file: File,
   target: ItemAssetTarget,
 ) {
-  const boundary = `menuverse-${crypto.randomUUID()}`;
+  const boundary = `my-menu-${crypto.randomUUID()}`;
   const metadata = JSON.stringify({
     name: file.name,
     parents: [env.googleDriveFolderId],

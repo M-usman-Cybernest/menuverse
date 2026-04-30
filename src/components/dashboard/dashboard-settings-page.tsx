@@ -127,18 +127,34 @@ export function DashboardSettingsPage() {
             Business Configuration
           </h2>
         </div>
-        <Button
-          onClick={() => {
-            if (activeTab === "business") saveProfile(restaurant);
-            else if (activeTab === "hours") saveHours(restaurant.timings);
-            else if (activeTab === "branches") saveBranches(restaurant.branches);
-            else saveRestaurant();
-          }}
-          disabled={saving}
-        >
-          <Save className="h-4 w-4" />
-          {saving ? "Saving..." : `Save ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            onClick={() =>
+              updateRestaurantField(
+                "isPublished",
+                !restaurant.isPublished,
+              )
+            }
+            variant={restaurant.isPublished ? "default" : "secondary"}
+            size="sm"
+            className="h-9 px-4 rounded-full border-[#0f766e]/20"
+          >
+            <div className={`mr-2 h-2 w-2 rounded-full ${restaurant.isPublished ? "bg-white animate-pulse" : "bg-slate-400"}`} />
+            {restaurant.isPublished ? "Public" : "Hidden"}
+          </Button>
+          <Button
+            onClick={() => {
+              if (activeTab === "business") saveProfile(restaurant);
+              else if (activeTab === "hours") saveHours(restaurant.timings);
+              else if (activeTab === "branches") saveBranches(restaurant.branches);
+              else saveRestaurant();
+            }}
+            disabled={saving}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Saving..." : `Save Changes`}
+          </Button>
+        </div>
       </div>
 
       {saveError ? (
@@ -248,92 +264,48 @@ export function DashboardSettingsPage() {
           </Card>
 
           <div className="grid gap-6">
-            {/* Logo upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Logo / Thumbnail</CardTitle>
-                <CardDescription>
-                  Upload your restaurant logo. Shown on cards and QR pages.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ImageUploadZone
-                  currentUrl={restaurant.logoUrl}
-                  inputRef={logoInputRef}
-                  loading={uploadingLogo}
-                  onUpload={(file) => void uploadFile(file, "logoUrl")}
-                  label="Upload Logo"
-                  height={140}
-                />
-              </CardContent>
-            </Card>
+            {/* Images */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Logo / Thumbnail</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ImageUploadZone
+                    currentUrl={restaurant.logoUrl}
+                    inputRef={logoInputRef}
+                    loading={uploadingLogo}
+                    onUpload={(file) => void uploadFile(file, "logoUrl")}
+                    label="Upload Logo"
+                    height={110}
+                  />
+                </CardContent>
+              </Card>
 
-            {/* Cover image upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Cover Image</CardTitle>
-                <CardDescription>
-                  The hero banner on the public site page.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ImageUploadZone
-                  currentUrl={restaurant.coverImageUrl}
-                  inputRef={coverInputRef}
-                  loading={uploadingCover}
-                  onUpload={(file) => void uploadFile(file, "coverImageUrl")}
-                  label="Upload Cover"
-                  height={160}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Publishing */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Publishing</CardTitle>
-                <CardDescription>
-                  Control public visibility of the restaurant.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3">
-                  <div>
-                    <p className="font-medium text-[#111827]">Public site</p>
-                    <p className="text-sm text-[#6b7280]">
-                      When off, the public route stays hidden.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() =>
-                      updateRestaurantField(
-                        "isPublished",
-                        !restaurant.isPublished,
-                      )
-                    }
-                    variant={restaurant.isPublished ? "default" : "secondary"}
-                  >
-                    {restaurant.isPublished ? "Published" : "Hidden"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Cover Image</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ImageUploadZone
+                    currentUrl={restaurant.coverImageUrl}
+                    inputRef={coverInputRef}
+                    loading={uploadingCover}
+                    onUpload={(file) => void uploadFile(file, "coverImageUrl")}
+                    label="Upload Cover"
+                    height={110}
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Announcement Bar */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Announcement Bar</CardTitle>
-                <CardDescription>
-                  Display a message at the top of your site (e.g. &quot;20% Discount Today&quot;).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border border-[#ece4d8] bg-[#fffcf8] px-4 py-3 mb-2">
+            <Card className="overflow-hidden border-teal-600/20 shadow-sm">
+              <div className="bg-gradient-to-r from-teal-600/10 to-teal-600/5 px-6 py-4 border-b border-teal-600/10">
+                <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-[#111827]">Show Announcement</p>
-                    <p className="text-sm text-[#6b7280]">
-                      Toggle visibility on the public site.
-                    </p>
+                    <CardTitle className="text-teal-900">Announcement Bar</CardTitle>
+                    <p className="text-xs text-teal-700/70 mt-0.5">Highlight deals or updates at the top of your site.</p>
                   </div>
                   <button
                     onClick={() =>
@@ -343,25 +315,46 @@ export function DashboardSettingsPage() {
                       )
                     }
                     type="button"
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${restaurant.announcementBar?.show ? "bg-[#0f766e]" : "bg-[#d9cdbb]"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${restaurant.announcementBar?.show ? "bg-teal-600" : "bg-slate-300"
                       }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${restaurant.announcementBar?.show ? "translate-x-5" : "translate-x-0"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${restaurant.announcementBar?.show ? "translate-x-5" : "translate-x-0"
                         }`}
                     />
                   </button>
                 </div>
-                
-                <Field label="Announcement Text">
-                  <Input
-                    placeholder="e.g. 20% Discount Today"
-                    value={restaurant.announcementBar?.text || ""}
-                    onChange={(e) =>
-                      updateAnnouncementBar("text", e.target.value)
-                    }
-                  />
-                </Field>
+              </div>
+              <CardContent className="pt-6">
+                <div className="relative">
+                  <div className={`transition-opacity duration-300 ${!restaurant.announcementBar?.show ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
+                    <Field label="Promotion Message">
+                      <div className="relative">
+                        <Input
+                          placeholder="e.g. 20% Discount Today"
+                          value={restaurant.announcementBar?.text || ""}
+                          onChange={(e) =>
+                            updateAnnouncementBar("text", e.target.value)
+                          }
+                          className="pl-10 h-11"
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-teal-600/50">
+                          <Store className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </Field>
+                    <p className="mt-2 text-[11px] text-slate-500 italic">
+                      Tip: Keep it short and catchy for better mobile display.
+                    </p>
+                  </div>
+                  {!restaurant.announcementBar?.show && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="bg-white/80 px-3 py-1 rounded-md text-xs font-medium text-slate-400 border border-slate-100">
+                        Enable toggle above to edit
+                      </span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -535,70 +528,87 @@ export function DashboardSettingsPage() {
           </Card>
 
           {/* Inline editing for existing branches */}
-          {restaurant.branches.map((branch) => (
-            <Card key={branch.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">{branch.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                <Field label="Branch Name">
-                  <Input
-                    value={branch.name}
-                    onChange={(e) => updateBranch(branch.id, "name", e.target.value)}
-                  />
-                </Field>
-                <Field label="Table Count">
-                  <Input
-                    type="number"
-                    value={branch.tableCount}
-                    onChange={(e) =>
-                      updateBranch(
-                        branch.id,
-                        "tableCount",
-                        Number(e.target.value || 0),
-                      )
-                    }
-                  />
-                </Field>
-                <Field label="Address">
-                  <Input
-                    value={branch.address}
-                    onChange={(e) =>
-                      updateBranch(branch.id, "address", e.target.value)
-                    }
-                  />
-                </Field>
-                <Field label="City">
-                  <Input
-                    value={branch.city}
-                    onChange={(e) => updateBranch(branch.id, "city", e.target.value)}
-                  />
-                </Field>
-                <div className="md:col-span-2">
-                  <span className="mb-2 block text-sm font-medium text-[#374151]">
-                    Location
-                  </span>
-                  <MapPicker
-                    locationLabel={branch.address}
-                    value={branch.mapsUrl}
-                    onLabelChange={(label) => updateBranch(branch.id, "address", label)}
-                    onLocationChange={(url) => updateBranch(branch.id, "mapsUrl", url)}
-                    height={160}
-                  />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {restaurant.branches.map((branch) => (
+              <Card key={branch.id} className="flex flex-col border-[#e7dfd2]/60 shadow-sm transition-shadow hover:shadow-md">
+                <CardHeader className="bg-[#faf7f2]/50 border-b border-[#e7dfd2]/40 pb-3 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base font-semibold text-[#111827]">{branch.name}</CardTitle>
+                  <Button
+                    onClick={() => void handleRemoveBranch(branch.id)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="pt-5 space-y-4 flex-grow">
+                  <Field label="Branch Name">
+                    <Input
+                      value={branch.name}
+                      onChange={(e) => updateBranch(branch.id, "name", e.target.value)}
+                      className="h-9 text-sm"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="City">
+                      <Input
+                        value={branch.city}
+                        onChange={(e) => updateBranch(branch.id, "city", e.target.value)}
+                        className="h-9 text-sm"
+                      />
+                    </Field>
+                    <Field label="Tables">
+                      <Input
+                        type="number"
+                        value={branch.tableCount}
+                        onChange={(e) =>
+                          updateBranch(
+                            branch.id,
+                            "tableCount",
+                            Number(e.target.value || 0),
+                          )
+                        }
+                        className="h-9 text-sm"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Address">
+                    <Input
+                      value={branch.address}
+                      onChange={(e) =>
+                        updateBranch(branch.id, "address", e.target.value)
+                      }
+                      className="h-9 text-sm"
+                    />
+                  </Field>
+                  
+                  <div className="pt-2">
+                    <span className="mb-2 block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Map Location
+                    </span>
+                    <MapPicker
+                      locationLabel={branch.address}
+                      value={branch.mapsUrl}
+                      onLabelChange={(label) => updateBranch(branch.id, "address", label)}
+                      onLocationChange={(url) => updateBranch(branch.id, "mapsUrl", url)}
+                      height={120}
+                    />
+                  </div>
+                </CardContent>
+                <div className="p-4 bg-slate-50/50 border-t border-[#e7dfd2]/40 mt-auto">
+                  <Button
+                    onClick={() => saveBranches(restaurant.branches)}
+                    size="sm"
+                    variant="outline"
+                    className="w-full h-9 text-xs font-semibold bg-white"
+                  >
+                    Save Changes
+                  </Button>
                 </div>
-              </CardContent>
-              <CardHeader className="pt-0">
-                <Button
-                  onClick={() => saveBranches(restaurant.branches)}
-                  size="sm"
-                  variant="outline"
-                  className="w-full"
-                >
-                  Save Branch Changes
-                </Button>
-              </CardHeader>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
 
           {/* Branch modal */}
           <Modal
