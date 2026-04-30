@@ -13,15 +13,18 @@ export async function POST(request: Request) {
     const payload = signupSchema.parse(json);
     const user = await registerOwner(payload);
     
-    // Send welcome email with verification link (10 min expiry)
-    const token = await signVerificationToken(user.id);
-    const verificationUrl = `${env.appUrl}/api/auth/verify-email?token=${token}`;
-    await sendWelcomeEmail(user.email, user.name, verificationUrl);
+    // Send welcome email only if it's an email address
+    if (user.email) {
+      const token = await signVerificationToken(user.id);
+      const verificationUrl = `${env.appUrl}/api/auth/verify-email?token=${token}`;
+      await sendWelcomeEmail(user.email, user.name, verificationUrl);
+    }
 
     await setSessionCookie({
       userId: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     });
 

@@ -5,7 +5,7 @@ import { env } from "@/lib/env";
 import type { AuthSession } from "@/lib/types";
 
 export const SESSION_COOKIE_NAME = `${env.siteName.toLowerCase().replace(/\s+/g, "_")}_session`;
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
 function getJwtSecret() {
   return new TextEncoder().encode(env.jwtSecret);
@@ -31,7 +31,7 @@ export async function verifySessionToken(token: string) {
   try {
     const { payload } = await jwtVerify<AuthSession>(token, getJwtSecret());
 
-    if (!payload.userId || !payload.email || !payload.role || !payload.name) {
+    if (!payload.userId || (!payload.email && !payload.phone) || !payload.role || !payload.name) {
       return null;
     }
 
@@ -39,6 +39,7 @@ export async function verifySessionToken(token: string) {
       userId: payload.userId,
       name: payload.name,
       email: payload.email,
+      phone: payload.phone,
       role: payload.role,
     } satisfies AuthSession;
   } catch {

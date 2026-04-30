@@ -8,11 +8,11 @@ export async function POST(request: Request) {
   try {
     const json = await request.json();
     const payload = loginSchema.parse(json);
-    const user = await authenticateUser(payload.email, payload.password);
+    const user = await authenticateUser(payload.identifier, payload.password);
 
     if (!user) {
       return NextResponse.json(
-        { message: "Invalid email or password." },
+        { message: "Invalid identifier or password." },
         { status: 401 },
       );
     }
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       userId: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     });
 

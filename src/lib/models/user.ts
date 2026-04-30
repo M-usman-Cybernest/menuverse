@@ -17,10 +17,16 @@ const userSchema = new Schema(
     },
     email: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
       lowercase: true,
+      sparse: true,
+    },
+    phone: {
+      type: String,
+      unique: true,
+      trim: true,
+      sparse: true,
     },
     passwordHash: {
       type: String,

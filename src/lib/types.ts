@@ -28,7 +28,8 @@ export type DayOfWeek =
 export type TenantUser = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  phone?: string;
   role: UserRole;
   subscriptionStatus: SubscriptionStatus;
   isVerified: boolean;
@@ -38,7 +39,8 @@ export type TenantUser = {
 export type AuthSession = {
   userId: string;
   name: string;
-  email: string;
+  email?: string;
+  phone?: string;
   role: UserRole;
 };
 

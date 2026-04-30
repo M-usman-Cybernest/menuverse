@@ -27,6 +27,7 @@ export function serializeUser(record: StoredUserRecord): TenantUser {
     id: record.id,
     name: record.name,
     email: record.email,
+    phone: record.phone,
     role: record.role,
     subscriptionStatus: record.subscriptionStatus,
     isVerified: record.isVerified,

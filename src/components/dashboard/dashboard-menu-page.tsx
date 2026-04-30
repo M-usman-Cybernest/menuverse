@@ -562,7 +562,7 @@ export function DashboardMenuPage() {
                   name: event.target.value,
                 }))
               }
-              placeholder="e.g. Starters, Mains, Desserts..."
+              placeholder="Enter category name"
               value={catForm.name}
             />
           </Field>

@@ -383,7 +383,7 @@ export function MenuItemModal({
                   name: event.target.value,
                 }))
               }
-              placeholder="e.g. Classic Burger"
+              placeholder="Enter item name"
               value={itemForm.name}
             />
           </Field>

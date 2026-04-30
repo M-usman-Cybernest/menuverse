@@ -8,13 +8,13 @@ import {
 } from "@/lib/storage";
 
 export const loginSchema = z.object({
-  email: z.email().transform((value) => value.toLowerCase()),
+  identifier: z.string().min(3).transform((val) => val.toLowerCase().trim()),
   password: z.string().min(6),
 });
 
 export const signupSchema = z.object({
   name: z.string().trim().min(2),
-  email: z.email().transform((value) => value.toLowerCase()),
+  identifier: z.string().min(3).transform((val) => val.toLowerCase().trim()),
   password: z.string().min(6),
   restaurantName: z.string().trim().min(2),
 });

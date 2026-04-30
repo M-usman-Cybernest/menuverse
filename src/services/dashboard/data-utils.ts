@@ -163,7 +163,8 @@ export async function ensureSeeded() {
 export type DbUserRecord = {
   appId: string;
   name: string;
-  email: string;
+  email?: string;
+  phone?: string;
   passwordHash: string;
   role: UserRole;
   subscriptionStatus: TenantUser["subscriptionStatus"];

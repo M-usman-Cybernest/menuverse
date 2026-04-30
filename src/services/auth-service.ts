@@ -9,17 +9,22 @@ import {
 } from "./dashboard/data-utils";
 import { serializeUser } from "./dashboard/bundle-service";
 
-export async function findUserByEmail(email: string) {
+export async function findUserByIdentifier(identifier: string) {
   await ensureSeeded();
+  const cleanIdentifier = identifier.toLowerCase().trim();
 
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<DbUserRecord>();
+    const record = await UserModel.findOne({
+      $or: [{ email: cleanIdentifier }, { phone: cleanIdentifier }],
+    }).lean<DbUserRecord>();
+    
     if (!record) return null;
     return {
       id: record.appId,
       name: record.name,
       email: record.email,
+      phone: record.phone,
       passwordHash: record.passwordHash,
       role: record.role,
       subscriptionStatus: record.subscriptionStatus,
@@ -28,11 +33,17 @@ export async function findUserByEmail(email: string) {
   }
 
   const state = getMemoryState();
-  return state.users.find((u) => u.email === email.toLowerCase()) ?? null;
+  return (
+    state.users.find(
+      (u) =>
+        u.email?.toLowerCase() === cleanIdentifier ||
+        u.phone === cleanIdentifier,
+    ) ?? null
+  );
 }
 
-export async function validateCredentials(email: string, password: string) {
-  const user = await findUserByEmail(email);
+export async function validateCredentials(identifier: string, password: string) {
+  const user = await findUserByIdentifier(identifier);
   if (!user) return null;
 
   const isValid = await verifyPassword(password, user.passwordHash);

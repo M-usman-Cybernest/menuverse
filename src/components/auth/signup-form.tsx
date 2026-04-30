@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 
 type FieldErrors = {
   name?: string;
-  email?: string;
+  identifier?: string;
   password?: string;
   restaurantName?: string;
 };
@@ -22,7 +22,7 @@ export function SignupForm() {
   const { success: toastSuccess } = useToast();
   const [form, setForm] = useState({
     name: "",
-    email: "",
+    identifier: "",
     password: "",
     restaurantName: "",
   });
@@ -39,10 +39,10 @@ export function SignupForm() {
       errors.name = "Name must be at least 2 characters.";
     }
 
-    if (!form.email.trim()) {
-      errors.email = "Email is required.";
-    } else if (!/\S+@\S+\.\S+/.test(form.email.trim())) {
-      errors.email = "Please enter a valid email address.";
+    if (!form.identifier.trim()) {
+      errors.identifier = "Email or phone is required.";
+    } else if (form.identifier.length < 3) {
+      errors.identifier = "Please enter a valid identifier.";
     }
 
     if (!form.password.trim()) {
@@ -98,7 +98,7 @@ export function SignupForm() {
 
   return (
     <AuthShell
-      description="Create a business owner account and start with a seeded starter menu you can edit."
+      description="Start your business journey today. You will stay logged in for 30 days."
       footer={
         <span>
           Already have an account?{" "}
@@ -118,6 +118,7 @@ export function SignupForm() {
       >
         <Field label="Full Name" error={fieldErrors.name}>
           <Input
+            placeholder="Enter your full name"
             value={form.name}
             onChange={(event) => {
               setForm((current) => ({ ...current, name: event.target.value }));
@@ -126,19 +127,21 @@ export function SignupForm() {
             className={fieldErrors.name ? errorClass : ""}
           />
         </Field>
-        <Field label="Email" error={fieldErrors.email}>
+        <Field label="Email or Phone" error={fieldErrors.identifier}>
           <Input
-            value={form.email}
+            placeholder="Enter your email or phone number"
+            value={form.identifier}
             onChange={(event) => {
-              setForm((current) => ({ ...current, email: event.target.value }));
-              clearFieldError("email");
+              setForm((current) => ({ ...current, identifier: event.target.value }));
+              clearFieldError("identifier");
             }}
-            className={fieldErrors.email ? errorClass : ""}
+            className={fieldErrors.identifier ? errorClass : ""}
           />
         </Field>
         <Field label="Password" error={fieldErrors.password}>
           <Input
             type="password"
+            placeholder="Enter your password"
             value={form.password}
             onChange={(event) => {
               setForm((current) => ({ ...current, password: event.target.value }));
@@ -149,6 +152,7 @@ export function SignupForm() {
         </Field>
         <Field label="Business Name" error={fieldErrors.restaurantName}>
           <Input
+            placeholder="Enter your business name"
             value={form.restaurantName}
             onChange={(event) => {
               setForm((current) => ({

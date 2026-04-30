@@ -331,7 +331,7 @@ export function DashboardSettingsPage() {
                     <Field label="Promotion Message">
                       <div className="relative">
                         <Input
-                          placeholder="e.g. 20% Discount Today"
+                          placeholder="Enter your announcement message"
                           value={restaurant.announcementBar?.text || ""}
                           onChange={(e) =>
                             updateAnnouncementBar("text", e.target.value)
@@ -620,7 +620,7 @@ export function DashboardSettingsPage() {
             <div className="space-y-4">
               <Field label="Branch Name">
                 <Input
-                  placeholder="e.g. Downtown Location"
+                  placeholder="Enter branch name"
                   value={branchForm.name}
                   onChange={(e) =>
                     setBranchForm((p) => ({ ...p, name: e.target.value }))

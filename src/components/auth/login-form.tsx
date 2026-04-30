@@ -11,14 +11,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 
 type FieldErrors = {
-  email?: string;
+  identifier?: string;
   password?: string;
 };
 
 export function LoginForm() {
   const router = useRouter();
   const { success: toastSuccess } = useToast();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -27,10 +27,10 @@ export function LoginForm() {
   function validate(): boolean {
     const errors: FieldErrors = {};
 
-    if (!email.trim()) {
-      errors.email = "Email is required.";
-    } else if (!/\S+@\S+\.\S+/.test(email.trim())) {
-      errors.email = "Please enter a valid email address.";
+    if (!identifier.trim()) {
+      errors.identifier = "Email or phone is required.";
+    } else if (identifier.length < 3) {
+      errors.identifier = "Please enter a valid identifier.";
     }
 
     if (!password.trim()) {
@@ -54,7 +54,7 @@ export function LoginForm() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
 
     const payload = (await response.json()) as { message?: string };
@@ -72,7 +72,7 @@ export function LoginForm() {
 
   return (
     <AuthShell
-      description="Use the seeded admin or owner account, or sign up a fresh business owner."
+      description="Access your business dashboard. You will stay logged in for 30 days."
       footer={
         <span>
           No account yet?{" "}
@@ -90,20 +90,22 @@ export function LoginForm() {
           void submit();
         }}
       >
-        <Field label="Email" error={fieldErrors.email}>
+        <Field label="Email or Phone" error={fieldErrors.identifier}>
           <Input
-            value={email}
+            placeholder="Enter your email or phone number"
+            value={identifier}
             onChange={(event) => {
-              setEmail(event.target.value);
-              if (fieldErrors.email) setFieldErrors((p) => ({ ...p, email: undefined }));
+              setIdentifier(event.target.value);
+              if (fieldErrors.identifier) setFieldErrors((p) => ({ ...p, identifier: undefined }));
             }}
-            className={fieldErrors.email ? "border-red-400 focus:border-red-500 focus:ring-red-500/15" : ""}
+            className={fieldErrors.identifier ? "border-red-400 focus:border-red-500 focus:ring-red-500/15" : ""}
           />
         </Field>
         <Field label="Password" error={fieldErrors.password}>
           <Input
             type="password"
             value={password}
+            placeholder="Enter your password"
             onChange={(event) => {
               setPassword(event.target.value);
               if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined }));

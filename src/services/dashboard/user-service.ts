@@ -151,15 +151,15 @@ export async function createTeamMember(
 ) {
   if (currentSession.role !== "admin") throw new Error("Permission denied.");
 
-  const existing = await findUserByEmail(input.email);
-  if (existing) throw new Error("Email already in use.");
+  const existing = await findUserByIdentifier(input.email);
+  if (existing) throw new Error("Email or phone already in use.");
 
   if (input.role === "owner") {
     return registerOwner({
       name: input.name,
-      email: input.email,
+      identifier: input.email,
       password: input.password,
-      restaurantName: input.restaurantName || `${input.name}'s Restaurant`,
+      restaurantName: input.restaurantName || `${input.name}'s Business`,
     });
   }
 
@@ -205,7 +205,7 @@ export async function createTeamMember(
 
 export async function registerOwner(input: {
   name: string;
-  email: string;
+  identifier: string;
   password: string;
   restaurantName: string;
 }) {
@@ -215,10 +215,11 @@ export async function registerOwner(input: {
 
   if (isDatabaseConfigured()) {
     await connectToDatabase();
+    const isEmail = input.identifier.includes("@");
     const ownerRecord = await UserModel.create({
       appId: userId,
       name: input.name,
-      email: input.email.toLowerCase(),
+      ...(isEmail ? { email: input.identifier.toLowerCase() } : { phone: input.identifier }),
       passwordHash,
       role: "owner",
       subscriptionStatus: "trial",
@@ -294,6 +295,7 @@ export async function registerOwner(input: {
       id: ownerRecord.appId,
       name: ownerRecord.name,
       email: ownerRecord.email,
+      phone: ownerRecord.phone,
       passwordHash: ownerRecord.passwordHash,
       role: ownerRecord.role,
       subscriptionStatus: ownerRecord.subscriptionStatus,
@@ -302,10 +304,11 @@ export async function registerOwner(input: {
   }
 
   const state = getMemoryState();
+  const isEmail = input.identifier.includes("@");
   const ownerRecord = {
     id: userId,
     name: input.name,
-    email: input.email.toLowerCase(),
+    ...(isEmail ? { email: input.identifier.toLowerCase() } : { phone: input.identifier }),
     passwordHash,
     role: "owner",
     subscriptionStatus: "trial",
@@ -341,10 +344,13 @@ export async function registerOwner(input: {
   return serializeUser(ownerRecord);
 }
 
-async function findUserByEmail(email: string) {
+async function findUserByIdentifier(identifier: string) {
+  const cleanIdentifier = identifier.toLowerCase().trim();
   if (isDatabaseConfigured()) {
     await connectToDatabase();
-    const record = await UserModel.findOne({ email: email.toLowerCase() }).lean<DbUserRecord>();
+    const record = await UserModel.findOne({
+      $or: [{ email: cleanIdentifier }, { phone: cleanIdentifier }],
+    }).lean<DbUserRecord>();
     if (!record) {
       return null;
     }
@@ -353,6 +359,7 @@ async function findUserByEmail(email: string) {
       id: record.appId,
       name: record.name,
       email: record.email,
+      phone: record.phone,
       passwordHash: record.passwordHash,
       role: record.role,
       subscriptionStatus: record.subscriptionStatus,
@@ -361,7 +368,12 @@ async function findUserByEmail(email: string) {
     } satisfies StoredUserRecord;
   }
   const state = getMemoryState();
-  return state.users.find((u) => u.email === email.toLowerCase()) ?? null;
+  return (
+    state.users.find(
+      (u) =>
+        u.email?.toLowerCase() === cleanIdentifier || u.phone === cleanIdentifier,
+    ) ?? null
+  );
 }
 
 function ensureUniqueSlug(base: string, existing: Array<{ slug: string }>) {
