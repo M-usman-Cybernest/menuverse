@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Move3D } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { resolveDriveUrl } from "@/lib/google-drive";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ImageSliderProps {
   images: string[];
@@ -14,6 +15,7 @@ interface ImageSliderProps {
 
 export function ImageSlider({ images, alt, hasAr, className = "" }: ImageSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   const allImages = images.length > 0 ? images : [""]; // Fallback to empty string for single image case if needed
 
   const nextSlide = (e: React.MouseEvent) => {
@@ -33,6 +35,11 @@ export function ImageSlider({ images, alt, hasAr, className = "" }: ImageSliderP
 
   return (
     <div className={`relative group h-full w-full overflow-hidden rounded-xl bg-[#f8f9fa] ${className}`}>
+      {!isLoaded && (
+        <div className="absolute inset-0 z-10">
+          <Skeleton className="h-full w-full rounded-none" />
+        </div>
+      )}
       {/* Images */}
       <div 
         className="relative h-full w-full transition-transform duration-500 ease-out"
@@ -42,11 +49,12 @@ export function ImageSlider({ images, alt, hasAr, className = "" }: ImageSliderP
           <div key={index} className="relative h-full w-full flex-shrink-0">
             <Image
               alt={`${alt} - Image ${index + 1}`}
-              className="object-cover"
+              className={`object-cover transition-opacity duration-300 ${isLoaded ? "opacity-100" : "opacity-0"}`}
               fill
               sizes="(max-width: 768px) 100vw, 40vw"
               src={resolveDriveUrl(url, "image")}
               priority={index === 0}
+              onLoadingComplete={() => setIsLoaded(true)}
             />
           </div>
         ))}

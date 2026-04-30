@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { Skeleton } from "@/components/ui/skeleton";
 import { resolveDriveUrl } from "@/lib/google-drive";
 import { hasArAsset } from "@/lib/storage";
 import type { MenuItem, RestaurantDataset } from "@/lib/types";
@@ -46,6 +47,8 @@ export function PublicRestaurantPage({
   const [isDesktop, setIsDesktop] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [coverLoaded, setCoverLoaded] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const origin =
     typeof window !== "undefined"
       ? window.location.origin
@@ -213,13 +216,19 @@ export function PublicRestaurantPage({
       )}
       <main className="bg-[#fcfaf7] text-[#1f2937]">
         <section className="relative overflow-hidden bg-[#111827] text-white">
+          {!coverLoaded && (
+            <div className="absolute inset-0 z-0">
+              <Skeleton className="h-full w-full opacity-20 rounded-none" />
+            </div>
+          )}
           <Image
             alt={initialDataset.restaurant.name}
-            className="absolute inset-0 h-full w-full object-cover opacity-40"
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${coverLoaded ? "opacity-40" : "opacity-0"}`}
             fill
             priority
             sizes="100vw"
             src={resolveDriveUrl(initialDataset.restaurant.coverImageUrl, "image")}
+            onLoadingComplete={() => setCoverLoaded(true)}
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.16),rgba(17,24,39,0.88))]" />
           <div className="relative mx-auto flex min-h-[35vh] max-w-7xl flex-col justify-between gap-12 px-4 py-5 sm:px-6 lg:px-8">
@@ -263,13 +272,17 @@ export function PublicRestaurantPage({
               <div className="space-y-3">
                 <div className="flex items-center gap-6">
                   {initialDataset.restaurant.logoUrl && (
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/10">
+                      {!logoLoaded && (
+                        <Skeleton className="absolute inset-0 h-full w-full opacity-30 rounded-none" />
+                      )}
                       <Image
                         alt={initialDataset.restaurant.name}
-                        className="object-contain p-2"
+                        className={`object-contain p-2 transition-opacity duration-500 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
                         fill
                         sizes="80px"
                         src={resolveDriveUrl(initialDataset.restaurant.logoUrl, "image")}
+                        onLoadingComplete={() => setLogoLoaded(true)}
                       />
                     </div>
                   )}
