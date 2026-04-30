@@ -111,8 +111,9 @@ function createDefaultRestaurantBundle(bundle: DashboardBundle): DashboardBundle
       isPublished: true,
       timings: WEEK_DAYS.map((day) => ({
         day,
-        open: "11:00",
-        close: "22:00",
+        open: "00:00",
+        close: "00:00",
+        closed: true,
       })),
       branches: [
         {

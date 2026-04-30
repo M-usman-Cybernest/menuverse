@@ -17,6 +17,7 @@ import { resolveDriveUrl } from "@/lib/google-drive";
 import { hasArAsset } from "@/lib/storage";
 import type { MenuItem, RestaurantDataset } from "@/lib/types";
 import { formatPrice, formatTimeRange } from "@/lib/utils";
+import { env } from "@/lib/env";
 import { ImageSlider } from "./image-slider";
 import { AnnouncementBar } from "./announcement-bar";
 
@@ -124,10 +125,10 @@ export function PublicRestaurantPage({
       <main className="grid min-h-screen place-items-center bg-[#fcfaf7] px-4 text-center">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0f766e]">
-            MenuVerse
+            {env.siteName}
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-[#111827]">
-            No published restaurant is available yet.
+            No published business is available yet.
           </h1>
         </div>
       </main>

@@ -98,7 +98,7 @@ export function SignupForm() {
 
   return (
     <AuthShell
-      description="Create a restaurant owner account and start with a seeded starter menu you can edit."
+      description="Create a business owner account and start with a seeded starter menu you can edit."
       footer={
         <span>
           Already have an account?{" "}

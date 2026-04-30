@@ -13,10 +13,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { env } from "@/lib/env";
+
 export const metadata: Metadata = {
-  title: "MenuVerse",
+  title: env.siteName,
   description:
-    "AR menu SaaS starter with a restaurant admin surface, QR exports, and a mobile-first public site.",
+    "AR menu SaaS starter with a business admin surface, QR exports, and a mobile-first public site.",
 };
 
 export default function RootLayout({

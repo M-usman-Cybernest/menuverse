@@ -24,7 +24,7 @@ export async function sendWelcomeEmail(to: string, name: string, verificationLin
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Welcome to MenuVerse</title>
+      <title>Welcome to ${env.siteName}</title>
       <style>
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -106,7 +106,7 @@ export async function sendWelcomeEmail(to: string, name: string, verificationLin
     <body>
       <div class="container">
         <div class="header">
-          <h1>MenuVerse</h1>
+          <h1>${env.siteName}</h1>
         </div>
         <div class="content">
           <p class="welcome-text">Hi ${name}, welcome to the future of inventory management!</p>
@@ -116,7 +116,7 @@ export async function sendWelcomeEmail(to: string, name: string, verificationLin
           </div>
 
           <p class="message">
-            We're thrilled to have you on board. MenuVerse helps you transform your physical inventory into stunning 3D and AR experiences. 
+            We're thrilled to have you on board. ${env.siteName} helps you transform your physical inventory into stunning 3D and AR experiences. 
             To get started and secure your account, please verify your email address by clicking the button below.
           </p>
 
@@ -130,7 +130,7 @@ export async function sendWelcomeEmail(to: string, name: string, verificationLin
           </p>
         </div>
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} MenuVerse AR. All rights reserved.</p>
+          <p>&copy; ${new Date().getFullYear()} ${env.siteName} AR. All rights reserved.</p>
           <p>This is an automated message, please do not reply to this email.</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ export async function sendWelcomeEmail(to: string, name: string, verificationLin
     await transporter.sendMail({
       from: env.smtp.from,
       to,
-      subject: "Verify your MenuVerse account",
+      subject: `Verify your ${env.siteName} account`,
       html,
     });
   } catch (error) {

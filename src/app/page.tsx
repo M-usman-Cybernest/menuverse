@@ -7,7 +7,7 @@ export default async function HomePage() {
 
   return (
     <LandingPage
-      siteName={env.siteName || "MenuVerse"}
+      siteName={env.siteName || "Unknown"}
       authenticated={Boolean(session)}
     />
   );

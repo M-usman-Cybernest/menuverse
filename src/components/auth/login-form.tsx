@@ -72,7 +72,7 @@ export function LoginForm() {
 
   return (
     <AuthShell
-      description="Use the seeded admin or owner account, or sign up a fresh restaurant owner."
+      description="Use the seeded admin or owner account, or sign up a fresh business owner."
       footer={
         <span>
           No account yet?{" "}

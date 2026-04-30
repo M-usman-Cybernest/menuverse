@@ -6,7 +6,7 @@ async function main() {
   const { runSeed } = await import("../src/lib/seed");
 
   await runSeed();
-  console.log("MenuVerse seed complete.");
+  console.log("seed complete.");
   process.exit(0);
 }
 

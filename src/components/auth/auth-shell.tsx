@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { env } from "@/lib/env";
 
 export function AuthShell({
   children,
@@ -21,7 +22,7 @@ export function AuthShell({
             className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#99f6e4]"
             href="/"
           >
-            MenuVerse
+            {env.siteName}
           </Link>
           <div>
             <h1 className="text-4xl font-semibold tracking-tight">{title}</h1>
@@ -32,7 +33,6 @@ export function AuthShell({
         <Card className="border-white/10 bg-white/95 shadow-[0_32px_80px_-32px_rgba(0,0,0,0.6)]">
           <CardHeader>
             <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {children}

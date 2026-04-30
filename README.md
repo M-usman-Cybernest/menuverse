@@ -1,6 +1,6 @@
 # MenuVerse 🚀
 
-MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to transform traditional dining into an immersive digital experience. Built with Next.js 15, it empowers restaurant owners to showcase their dishes in stunning 3D and Augmented Reality (AR) directly from the browser.
+MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to transform traditional dining into an immersive digital experience. Built with Next.js 15, it empowers business owners to showcase their dishes in stunning 3D and Augmented Reality (AR) directly from the browser.
 
 ---
 
@@ -19,9 +19,9 @@ MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to tran
 
 ### 🛠️ Robust Admin Dashboard
 - **Inventory**: Intuitive management of categories and Inventory.
-- **Branch Management**: Support for multiple locations and custom restaurant branches.
+- **Branch Management**: Support for multiple locations and custom business branches.
 - **Role-Based Access**: Secure dashboard protected by JWT-based authentication for Admins and Owners.
-- **Live Statistics**: Overview of restaurant performance and item popularity.
+- **Live Statistics**: Overview of business performance and item popularity.
 
 ---
 
@@ -40,7 +40,7 @@ MenuVerse is a cutting-edge, mobile-first AR Menu SaaS platform designed to tran
 ## 🗺️ Route Architecture
 
 ### 🏠 Public View
-- `/`: The primary restaurant storefront.
+- `/`: The primary business storefront.
 - `/[slug]`: Branch-specific menu pages with filtered categories.
 - `?item=[id]`: Direct-to-AR routing for specific Inventory.
 

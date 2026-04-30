@@ -26,13 +26,13 @@ export const menuverseDemo: RestaurantDataset = {
     supportEmail: "concierge@apexstore.test",
     isPublished: true,
     timings: [
-      { day: "Monday", open: "09:00", close: "20:00" },
-      { day: "Tuesday", open: "09:00", close: "20:00" },
-      { day: "Wednesday", open: "09:00", close: "20:00" },
-      { day: "Thursday", open: "09:00", close: "21:00" },
-      { day: "Friday", open: "09:00", close: "21:00" },
-      { day: "Saturday", open: "10:00", close: "18:00" },
-      { day: "Sunday", open: "11:00", close: "17:00" },
+      { day: "Monday", open: "00:00", close: "00:00", closed: true },
+      { day: "Tuesday", open: "00:00", close: "00:00", closed: true },
+      { day: "Wednesday", open: "00:00", close: "00:00", closed: true },
+      { day: "Thursday", open: "00:00", close: "00:00", closed: true },
+      { day: "Friday", open: "00:00", close: "00:00", closed: true },
+      { day: "Saturday", open: "00:00", close: "00:00", closed: true },
+      { day: "Sunday", open: "00:00", close: "00:00", closed: true },
     ],
     branches: [
       {

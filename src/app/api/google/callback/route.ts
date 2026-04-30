@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { isGoogleDriveConfigured } from "@/lib/env";
+import { isGoogleDriveConfigured, env } from "@/lib/env";
 import {
   decodeGoogleDriveState,
   exchangeGoogleDriveCode,
@@ -187,7 +187,7 @@ function renderPopupCallbackPage(
   origin?: string,
 ) {
   const message = JSON.stringify({
-    type: "menuverse-external-asset",
+    type: `${env.siteName.toLowerCase().replace(/\s+/g, "-")}-external-asset`,
     asset,
   }).replace(/</g, "\\u003c");
 
@@ -197,7 +197,7 @@ function renderPopupCallbackPage(
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>MenuVerse Upload Callback</title>
+    <title>${env.siteName} Upload Callback</title>
   </head>
   <body style="font-family: Arial, sans-serif; padding: 24px;">
     <p>Finishing upload...</p>
@@ -221,7 +221,7 @@ function renderGoogleDriveAuthPage(
   const payload = JSON.stringify({
     message,
     ok,
-    type: "menuverse-google-drive-auth",
+    type: `${env.siteName.toLowerCase().replace(/\s+/g, "-")}-google-drive-auth`,
   }).replace(/</g, "\\u003c");
   const targetOrigin = JSON.stringify(origin || "*");
 
@@ -229,7 +229,7 @@ function renderGoogleDriveAuthPage(
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>MenuVerse Google Drive</title>
+    <title>${env.siteName} Google Drive</title>
   </head>
   <body style="font-family: Arial, sans-serif; padding: 24px;">
     <p>${ok ? "Connecting Google Drive..." : "Google Drive connection failed."}</p>

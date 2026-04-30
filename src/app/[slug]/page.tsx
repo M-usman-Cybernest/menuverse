@@ -17,7 +17,7 @@ export async function generateMetadata({
   const dataset = await getRestaurantDatasetBySlug(slug);
 
   return {
-    title: dataset ? `${dataset.restaurant.name} | MenuVerse` : "MenuVerse",
+    title: dataset ? `${dataset.restaurant.name}` : "Unknown",
     description:
       dataset?.restaurant.description ??
       "Preview dishes, locations, and AR-ready Inventory.",

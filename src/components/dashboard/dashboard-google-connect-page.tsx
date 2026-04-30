@@ -127,7 +127,7 @@ export function DashboardGoogleConnectPage() {
 
       const popup = window.open(
         payload.authUrl,
-        "menuverse-google-drive",
+        "google-drive",
         "width=560,height=720,resizable=yes,scrollbars=yes",
       );
 
