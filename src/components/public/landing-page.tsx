@@ -58,8 +58,8 @@ export function LandingPage({ siteName, authenticated = false }: LandingPageProp
           <h1 className="text-6xl sm:text-8xl lg:text-[10rem] font-black tracking-tight uppercase leading-none select-none">
             {siteName}
           </h1>
-          <p className="mt-4 text-lg sm:text-xl font-medium tracking-[0.4em] uppercase text-white/80">
-            Evolution of Dining
+          <p className="mt-4 text-lg sm:text-xl font-medium tracking-[0.2em] uppercase text-white/80">
+            ETHE EVOLUTION OF BUSINESS PRESENCE
           </p>
         </motion.div>
       </div>
@@ -77,12 +77,10 @@ export function LandingPage({ siteName, authenticated = false }: LandingPageProp
             <span className="text-sm font-bold tracking-[0.2em] uppercase">{siteName}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold leading-tight">
-            The next generation AR menu experience for modern restaurants.
+            The professional public home for modern businesses.
           </h2>
           <p className="text-white/60 text-base leading-relaxed">
-            Elevate your guest experience with immersive 3D previews,
-            real-time updates, and beautiful digital storefronts designed
-            for the mobile-first world.
+            Establish your brand’s digital storefront in minutes. Our portal provides a streamlined, beautiful space to showcase your services, update your offerings in real-time, and connect with your audience on a mobile-first platform.
           </p>
         </motion.div>
       </div>
