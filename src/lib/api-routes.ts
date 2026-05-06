@@ -37,6 +37,7 @@ export const API_DASHBOARD_UPLOAD = "/api/dashboard/upload";
 export const API_GOOGLE_AUTH = "/api/google/auth";
 export const API_GOOGLE_FILES = "/api/google/files";
 export const API_GOOGLE_STATUS = "/api/google/status";
+export const API_GOOGLE_TOKEN = "/api/google/token";
 
 // ─── Dashboard – Users (admin) ───
 export const API_DASHBOARD_USERS = "/api/dashboard/users";

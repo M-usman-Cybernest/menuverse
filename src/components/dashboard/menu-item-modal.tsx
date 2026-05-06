@@ -8,7 +8,7 @@ import { useRef, useState } from "react";
 import { MobileImageUploader } from "@/components/ui/mobile-image-uploader";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
-import { API_DASHBOARD_UPLOAD } from "@/lib/api-routes";
+import { API_DASHBOARD_UPLOAD, API_GOOGLE_TOKEN } from "@/lib/api-routes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,14 +93,6 @@ export function MenuItemModal({
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   async function uploadFile(file: File, type: "image" | "model") {
-    if (
-      !ensureGoogleDriveConnected(
-        "Connect your Google account before uploading files to Google Drive."
-      )
-    ) {
-      return;
-    }
-
     const setter = type === "image" ? setUploading : setUploadingModel;
     const errorSetter = type === "image" ? setImageError : setModelError;
 
@@ -116,6 +108,84 @@ export function MenuItemModal({
 
     try {
       const target = getTargetForUpload(type, file);
+
+      // --- NEW: DIRECT CLIENT-SIDE UPLOAD TO GOOGLE DRIVE ---
+      if (googleDriveConnected) {
+        try {
+          // 1. Get access token from our secure endpoint
+          const tokenRes = await fetch(API_GOOGLE_TOKEN);
+          if (!tokenRes.ok) throw new Error("Failed to get Google Drive access token.");
+          const { accessToken, folderId } = await tokenRes.json();
+
+          // 2. Upload directly to Google Drive (bypasses Vercel limits)
+          const boundary = `menuverse-${crypto.randomUUID()}`;
+          const metadata = JSON.stringify({
+            name: file.name,
+            parents: [folderId],
+          });
+          const fileBytes = new Uint8Array(await file.arrayBuffer());
+          const body = new Blob([
+            `--${boundary}\r\n`,
+            "Content-Type: application/json; charset=UTF-8\r\n\r\n",
+            metadata,
+            "\r\n",
+            `--${boundary}\r\n`,
+            `Content-Type: ${file.type || "application/octet-stream"}\r\n\r\n`,
+            fileBytes,
+            "\r\n",
+            `--${boundary}--`,
+          ]);
+
+          const uploadRes = await fetch(
+            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name",
+            {
+              body,
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": `multipart/related; boundary=${boundary}`,
+              },
+              method: "POST",
+            },
+          );
+
+          if (!uploadRes.ok) throw new Error("Direct Google Drive upload failed.");
+          const { id: fileId } = await uploadRes.json();
+
+          // 3. Make the file public (reader role for anyone)
+          await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ role: "reader", type: "anyone" }),
+          });
+
+          // 4. Construct the URL (matching our resolveDriveUrl expectations)
+          const resultUrl = type === "image" 
+            ? `https://lh3.googleusercontent.com/d/${fileId}`
+            : `https://docs.google.com/uc?export=download&id=${fileId}`;
+
+          if (type === "image") {
+            setItemForm((prev) => ({
+              ...prev,
+              imageUrls: [...(prev.imageUrls || []), resultUrl].slice(0, 5),
+              imageUrl: prev.imageUrl || resultUrl,
+            }));
+          } else {
+            setItemForm((prev) => ({
+              ...prev,
+              [target]: resultUrl,
+            }));
+          }
+          return;
+        } catch (err) {
+          console.error("Direct upload failed, falling back to server upload...", err);
+          // Fallback to server upload if client-side fails for some reason
+        }
+      }
+
+      // --- FALLBACK: STANDARD SERVER-SIDE UPLOAD ---
       const formData = new FormData();
       formData.append("file", file);
       formData.append("provider", "google-drive");
@@ -149,8 +219,8 @@ export function MenuItemModal({
       if (type === "image") {
         setItemForm((prev) => ({
           ...prev,
-          imageUrls: [...prev.imageUrls, result.url].slice(0, 5),
-          imageUrl: prev.imageUrl || result.url, // Set primary if none exists
+          imageUrls: [...(prev.imageUrls || []), result.url].slice(0, 5),
+          imageUrl: prev.imageUrl || result.url,
         }));
       } else {
         setItemForm((prev) => ({
@@ -166,6 +236,7 @@ export function MenuItemModal({
       setter(false);
     }
   }
+
 
   async function submitItem() {
     if (!itemForm.name.trim() || !itemForm.categoryId) {
