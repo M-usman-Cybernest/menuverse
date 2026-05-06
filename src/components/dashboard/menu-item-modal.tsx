@@ -104,9 +104,9 @@ export function MenuItemModal({
     const setter = type === "image" ? setUploading : setUploadingModel;
     const errorSetter = type === "image" ? setImageError : setModelError;
 
-    const maxSize = 20 * 1024 * 1024; // 20 MB
+    const maxSize = 50 * 1024 * 1024; // 50 MB
     if (file.size > maxSize) {
-      errorSetter("File is too large. Maximum file size is 20MB.");
+      errorSetter("File is too large. Maximum file size is 50MB.");
       return;
     }
 
@@ -522,7 +522,7 @@ function ModelAssetField({
   return (
     <Field 
       label="3D Model" 
-      infoText={"Upload a 3D model to Google Drive. `.glb` and `.gltf` files are saved for Android/Web viewers, while `.usdz` files are saved for iPhone and iPad Quick Look.\n\n⚠️ Files more than 20MB cannot be uploaded."}
+      infoText={"Upload a 3D model to Google Drive. `.glb` and `.gltf` files are saved for Android/Web viewers, while `.usdz` files are saved for iPhone and iPad Quick Look.\n\n⚠️ Files more than 50MB cannot be uploaded."}
     >
       <div className="flex flex-col gap-2 rounded-xl border border-[#ece4d8] bg-[#fffcf8] p-4">
         {children}

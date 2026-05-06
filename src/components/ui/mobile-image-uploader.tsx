@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
 /** Maximum number of images allowed per item */
 const MAX_IMAGES = 5;
 
-/** Max file size – 20 MB */
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+/** Max file size – 50 MB */
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 /** Accepted image MIME types */
 const ACCEPTED_IMAGE_TYPES = "image/*";

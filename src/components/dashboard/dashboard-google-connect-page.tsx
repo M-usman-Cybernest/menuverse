@@ -94,6 +94,11 @@ export function DashboardGoogleConnectPage() {
       if (event.data.ok) {
         setConnected(true);
         void loadStatus();
+        
+        // Redirect back to inventory after successful connection
+        setTimeout(() => {
+          window.location.href = "/dashboard/menu";
+        }, 1500);
       }
     }
 
