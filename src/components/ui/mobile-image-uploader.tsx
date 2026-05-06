@@ -3,37 +3,21 @@
 import { Camera, GalleryHorizontal, ImagePlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-/** Maximum number of images allowed per item */
 const MAX_IMAGES = 5;
 
-/** Max file size – 50 MB */
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
-/** Accepted image MIME types */
 const ACCEPTED_IMAGE_TYPES = "image/*";
 
 type UploadSource = "camera" | "gallery";
 
 interface MobileImageUploaderProps {
-  /** Number of images already uploaded for this item */
   currentCount: number;
-  /** Whether an upload is in progress */
   uploading: boolean;
-  /** Called with each File the user selected/captured, one at a time */
   onFile: (file: File) => void | Promise<void>;
-  /** Optional error message to surface beneath the trigger */
   error?: string;
 }
 
-/**
- * SmartMobileUploader
- *
- * On mobile devices renders a bottom-sheet that lets the user choose:
- *   – Camera (opens the native camera app, max 5 shots)
- *   – Gallery (opens the photo library)
- *
- * On desktop it falls back to the standard file-picker.
- */
 export function MobileImageUploader({
   currentCount,
   uploading,
@@ -65,7 +49,6 @@ export function MobileImageUploader({
     const files = Array.from(fileList).slice(0, remaining);
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE_BYTES) {
-        // surface error through onFile caller – skip oversized file
         continue;
       }
       await onFile(file);
@@ -112,14 +95,11 @@ export function MobileImageUploader({
         )}
       </button>
 
-      {/* ── Error ── */}
       {error && (
         <p className="mt-1 text-xs font-medium text-[#c2410c]">{error}</p>
       )}
 
-      {/* ── Hidden file inputs ── */}
 
-      {/* Camera – capture="environment" opens rear camera on Android/iOS */}
       <input
         accept={ACCEPTED_IMAGE_TYPES}
         capture="environment"
