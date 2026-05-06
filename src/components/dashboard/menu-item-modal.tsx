@@ -1,9 +1,11 @@
 "use client";
 
-import { ImagePlus, Info, Package, Upload, X } from "lucide-react";
+import { Info, Package, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+
+import { MobileImageUploader } from "@/components/ui/mobile-image-uploader";
 
 import { useDashboard } from "@/components/dashboard/dashboard-provider";
 import { API_DASHBOARD_UPLOAD } from "@/lib/api-routes";
@@ -88,7 +90,6 @@ export function MenuItemModal({
   const [modelError, setModelError] = useState("");
   const [storageError, setStorageError] = useState("");
 
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   async function uploadFile(file: File, type: "image" | "model") {
@@ -315,21 +316,12 @@ export function MenuItemModal({
               ))}
               
               {(itemForm.imageUrls || []).length < 5 && (
-                <button
-                  className="flex aspect-square w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-[#d9cdbb] bg-white text-[#6b7280] transition hover:border-[#0f766e] hover:bg-[#f7f3eb]"
-                  disabled={uploading}
-                  onClick={() => imageInputRef.current?.click()}
-                  type="button"
-                >
-                  {uploading ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0f766e] border-t-transparent" />
-                  ) : (
-                    <>
-                      <ImagePlus className="h-5 w-5" />
-                      <span className="text-[10px]">Add Image</span>
-                    </>
-                  )}
-                </button>
+                <MobileImageUploader
+                  currentCount={(itemForm.imageUrls || []).length}
+                  uploading={uploading}
+                  onFile={(file) => uploadFile(file, "image")}
+                  error={imageError}
+                />
               )}
             </div>
 
@@ -337,24 +329,6 @@ export function MenuItemModal({
               <p className="text-xs font-medium text-[#6b7280]">
                 {(itemForm.imageUrls || []).length}/5 images uploaded
               </p>
-              <input
-                accept="image/*"
-                className="hidden"
-                multiple
-                onChange={async (event) => {
-                  const files = event.target.files;
-                  if (files) {
-                    const filesArray = Array.from(files).slice(0, 5 - (itemForm.imageUrls || []).length);
-                    // Process each file sequentially to avoid 429 errors
-                    for (const file of filesArray) {
-                      await uploadFile(file, "image");
-                    }
-                  }
-                  event.target.value = "";
-                }}
-                ref={imageInputRef}
-                type="file"
-              />
               <Input
                 onChange={(event) =>
                   setItemForm((previous) => ({
@@ -367,11 +341,7 @@ export function MenuItemModal({
               />
             </div>
           </div>
-          {imageError && (
-            <p className="mt-2 text-xs font-medium text-[#c2410c]">
-              {imageError}
-            </p>
-          )}
+
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">

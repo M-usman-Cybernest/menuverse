@@ -98,6 +98,23 @@ table tbody tr {
   animation: toast-slide-in 0.28s ease-out forwards;
 }
 
+/* Mobile bottom-sheet slide-up animation */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sheet-enter {
+  animation: sheet-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+
 @media print {
   .no-print {
     display: none !important;
