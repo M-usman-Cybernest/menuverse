@@ -7,17 +7,44 @@ import {
   ITEM_ASSET_TARGETS,
 } from "@/lib/storage";
 
+const pakistanPhoneRegex = /^(\+92|92|0)?3\d{9}$/;
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const identifierSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .superRefine((val, ctx) => {
+    const isPossiblyEmail = val.includes("@") || !/^\+?\d+$/.test(val);
+    if (isPossiblyEmail) {
+      if (!emailRegex.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid email address.",
+        });
+      }
+    } else {
+      if (!pakistanPhoneRegex.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid Pakistan phone number (e.g., 03xx, 923xx, or +923xx).",
+        });
+      }
+    }
+  });
+
+
 export const loginSchema = z.object({
-  identifier: z.string().min(3).transform((val) => val.toLowerCase().trim()),
+  identifier: identifierSchema,
   password: z.string().min(6),
 });
 
 export const signupSchema = z.object({
   name: z.string().trim().min(2),
-  identifier: z.string().min(3).transform((val) => val.toLowerCase().trim()),
+  identifier: identifierSchema,
   password: z.string().min(6),
   restaurantName: z.string().trim().min(2),
 });
+
 
 export const createTeamMemberSchema = z.object({
   name: z.string().trim().min(2),

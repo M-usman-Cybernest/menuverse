@@ -37,10 +37,11 @@ export function serializeUser(record: StoredUserRecord): TenantUser {
 
 export function buildDashboardBundle(
   user: TenantUser,
-  restaurant: RestaurantProfile,
+  restaurant: RestaurantProfile | null,
   categories: MenuCategory[],
   items: MenuItem[],
 ): DashboardBundle {
+
   return {
     currentUser: user,
     restaurant,
@@ -62,17 +63,19 @@ export async function getDashboardBundleForSession(currentSession: AuthSession):
       ? await findFirstRestaurant()
       : await findRestaurantByOwnerId(user.id);
 
-  if (!restaurant) {
-    throw new Error("No restaurant associated with this account.");
-  }
+  let categories: MenuCategory[] = [];
+  let items: MenuItem[] = [];
 
-  const [categories, items] = await Promise.all([
-    getCategoriesForRestaurant(restaurant.id),
-    getItemsForRestaurant(restaurant.id),
-  ]);
+  if (restaurant) {
+    [categories, items] = await Promise.all([
+      getCategoriesForRestaurant(restaurant.id),
+      getItemsForRestaurant(restaurant.id),
+    ]);
+  }
 
   return buildDashboardBundle(serializeUser(user), restaurant, categories, items);
 }
+
 
 export async function saveRestaurantBundle(
   currentSession: AuthSession,
